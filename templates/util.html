@@ -1,0 +1,19 @@
+{% macro print_cert(host,port) %}
+    {{ _print_cert(host, get_cert(host,port)) }}
+{% endmacro %}
+
+{% macro print_cert_smtp(host, port) %}
+    {{ _print_cert(host, get_cert_smtp(host, port)) }}
+{% endmacro %}
+
+{% macro _print_cert(host,c) %}
+    <h2>{{ host }}</h2>
+    <ul>
+        <li><span class="label">Från:</span> {{  c[0]|df }}</li>
+        <li><span class="label">Till:</span> {{ c[1]|df }}</li>
+        <li><span class="label">CN:</span> {{ c[2] }}</li>
+        <li><span class="label">AN:</span> {{ c[3] }}</li>
+        <li><span class="code"><b>HASH:</b> {{ c[4].upper() }}</span></li>
+        <li><span class="code"><b>TLSA:</b> {{ c[5].upper() }}</span></li>
+    </ul>
+{% endmacro %}

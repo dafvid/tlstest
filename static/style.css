@@ -1,0 +1,28 @@
+body {
+    font-size: 0.6 em;
+}
+
+h2
+{
+    margin-bottom: 0;
+    #border: 1px solid black
+}
+
+ul
+{
+    margin-top: 0.2em;
+    padding-left: 1em;
+    list-style-type: none;
+    #border: 1px solid black
+}
+
+.label
+{
+    font-family: "Trebuchet MS", Helvetica, sans-serif;
+    font-weight: bold;
+}
+
+.code
+{
+    font-family: "Courier New", Courier, monospace;
+}
