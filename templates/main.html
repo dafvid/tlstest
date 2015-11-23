@@ -14,5 +14,11 @@
 {# util.print_cert('www.feces.se', 443) #}
 {{ util.print_cert('chat.feces.se', 443) }}
 {{ util.print_cert('git.feces.se', 443) }}
-{# util.print_cert_smtp('datawebb.dafcorp.net', 25) #}
+<h1>dafcorp.net (SMTP)</h1>
+{{ util.print_cert_smtp('datawebb.dafcorp.net', 25) }}
+{{ util.print_cert_smtp('pontus.dafcorp.net', 25) }}
+{{ util.print_cert_smtp('mainframe.dafcorp.net', 25) }}
+<h1>Pjotor</h1>
+{# util.print_cert('pean.org', 443) #}
+{# util.print_cert('jails.se', 443) #}
 </html>
