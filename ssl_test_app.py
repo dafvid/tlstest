@@ -10,6 +10,7 @@ import binascii
 from queue import Queue, Empty
 from threading import Thread, Event
 import io
+import paramiko as pm
 
 app = Flask(__name__)
 app.debug = True
@@ -53,7 +54,6 @@ class PollThread(Thread):
         while not self.stop.isSet():
             if buf.getvalue():
                 buf = io.StringIO()
-                print('new buf')
 
             while not self.stop.isSet():
                 try:
@@ -65,7 +65,6 @@ class PollThread(Thread):
                     break
 
             self.q.put(buf.getvalue())
-        print("PollThread is dead!")
 
     def join(self, timeout=None):
         self.stop.set()
@@ -87,8 +86,6 @@ def get_cert_smtp(host, port):
         while True:
             try:
                 l = q.get_nowait()
-                if l:
-                    print(l)
             except Empty:
                 if got_tls and not starttls_sent:
                     s.send(b'STARTTLS\r\n')
@@ -121,7 +118,6 @@ def get_cert_smtp(host, port):
         dc = ssl_sock.getpeercert(binary_form=True)
         data = get_cert_data(c)
         data.append(hashlib.sha512(dc).hexdigest())
-        print(util.pp(c))
         return data
 
 @app.template_global()
@@ -138,10 +134,49 @@ def get_cert(host, port):
     return data
 
 
+# class KeyFetcher(pm.client.MissingHostKeyPolicy):
+#     def missing_host_key(self, client, hostname, key):
+
+
+@app.template_global()
+def get_ssh_key(host, port):
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.connect((host, port))
+    t = pm.Transport(s)
+    t.start_client()
+    k = t.get_remote_server_key()
+    t.close()
+    s.close()
+    print(binascii.hexlify(k.get_fingerprint()).decode())
+    return k, hashlib.sha256(k.asbytes()).hexdigest()
+
+
 @app.template_global()
 def get_tlsa(host, port):
     a = dns.resolver.query("_%s._tcp.%s." % (port, host), 'TLSA')
     return binascii.hexlify(a[0].cert).decode()
+
+
+@app.template_global()
+def get_sshfp(host, key):
+    try:
+        a = dns.resolver.query("%s" % host, 'SSHFP')
+        key_type = -1
+        if type(key) is pm.rsakey.RSAKey:
+            key_type = 1
+        elif type(key) is pm.dsskey.DSSKey:
+            key_type = 2
+        elif type(key) is pm.ecdsakey.ECDSAKey:
+            key_type = 3
+        else:
+            return 'ogiltigtyp'
+        for r in a:
+            if r.algorithm == key_type and r.fp_type == 2:
+                return binascii.hexlify(r.fingerprint).decode()
+        return 'detsketsig'
+    except dns.resolver.NoAnswer:
+        return 'noanswer'
+
 
 
 @app.template_filter('df')

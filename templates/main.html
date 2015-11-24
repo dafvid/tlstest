@@ -18,6 +18,10 @@
 {{ util.print_cert_smtp('datawebb.dafcorp.net', 25) }}
 {{ util.print_cert_smtp('pontus.dafcorp.net', 25) }}
 {{ util.print_cert_smtp('mainframe.dafcorp.net', 25) }}
+<h1>dafcorp.net (SSHFP)</h1>
+{{ util.print_sshfp('datawebb.dafcorp.net', 22) }}
+{{ util.print_sshfp('pontus.dafcorp.net', 22) }}
+{{ util.print_sshfp('mainframe.dafcorp.net', 22) }}
 <h1>Pjotor</h1>
 {# util.print_cert('pean.org', 443) #}
 {# util.print_cert('jails.se', 443) #}

@@ -17,3 +17,15 @@
         <li><span class="code"><b>TLSA:</b> {{ get_tlsa(host,port).upper() }}</span></li>
     </ul>
 {% endmacro %}
+
+{% macro print_sshfp(host, port) %}
+    {{ _print_sshfp(host, port, get_ssh_key(host,port)) }}
+{% endmacro %}
+
+{% macro _print_sshfp(host, port, key) %}
+    <h2>{{ host }}</h2>
+    <ul>
+        <li><span class="code"><b>&nbsp;&nbsp;&nbsp;FP:</b> {{ key[1].upper() }}</span></li>
+        <li><span class="code"><b>SSHFP:</b> {{ get_sshfp(host, key[0]).upper() }}</span></li>
+    </ul>
+{% endmacro %}
