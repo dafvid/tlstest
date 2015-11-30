@@ -1,0 +1,13 @@
+[uwsgi]
+uid             = 80
+gid             = 80
+module          = ssl_test_app:app
+master          = true
+processes       = 3
+socket          = /path/to/app.sock
+virtualenv      = /path/to/ssl_test_env
+chown-socket    = www
+chmod-socket    = 664
+vacuum          = true
+catch-exceptions= true
+pythonpath      = /path/to/ssl_test/
