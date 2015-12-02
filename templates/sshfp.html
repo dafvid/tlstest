@@ -1,2 +1,5 @@
 {% extends "host_form.html" %}
 {% block title %}SSHFP{% endblock %}
+{% block result %}
+{{ util.print_sshfp(result) }}
+{% endblock %}

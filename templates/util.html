@@ -1,4 +1,4 @@
-{% macro print_cert(host,port) %}
+{% macro print_cert_overview(host,port) %}
     {{ _print_cert(host, port, get_cert(host,port)) }}
 {% endmacro %}
 
@@ -30,7 +30,7 @@
     </ul>
 {% endmacro %}
 
-{% macro print_sshfp(host, port) %}
+{% macro print_sshfp_overview(host, port) %}
     {{ _print_sshfp(host, port, get_ssh_key(host,port)) }}
 {% endmacro %}
 
@@ -39,6 +39,14 @@
     <ul>
         <li><span class="code"><b>&nbsp;&nbsp;&nbsp;FP:</b> {{ key[1].upper() }}</span></li>
         <li><span class="code"><b>SSHFP:</b> {{ get_sshfp(host, key[0]).upper() }}</span></li>
+    </ul>
+{% endmacro %}
+
+{% macro print_sshfp(r) %}
+    <h2>{{ r.host }}:{{ r.port }}</h2>
+    <ul>
+        <li><span class="code"><b>&nbsp;&nbsp;&nbsp;FP:</b> {{ r.hash.upper() }}</span></li>
+        <li><span class="code"><b>{{match(r.hash,r.sshfp, 'SSHFP')}}:</b> {{ r.sshfp.upper() }}</span></li>
     </ul>
 {% endmacro %}
 
