@@ -1,0 +1,14 @@
+{% import 'util.html' as util %}
+
+<html>
+<head>
+    <meta charset="UTF-8">
+    <link rel="shortcut icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}"/>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div>{{ util.link('https', 'HTTPS') }} | {{ util.link('smtp', 'SMTP') }} | {{ util.link('sshfp', 'SSHFP') }}</div>
+<hr/>
+{% block body %}{% endblock %}
+</body>
+</html>

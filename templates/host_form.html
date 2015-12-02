@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block body %}
+<h1>{% block title %}{% endblock %}</h1>
+<form method="POST">
+    {{ form.hidden_tag() }}
+    {{ util.rf(form.host) }}
+    {{ util.rf(form.port)}}
+    <input type="submit" value="OK">
+</form>
+{% if not is_none(result) %}
+{% block result %}{% endblock %}
+{% endif %}
+{% endblock %}

@@ -1,5 +1,10 @@
 body {
     font-size: 0.6 em;
+    font-family: "Courier New", Courier, monospace;
+}
+
+a, a:visited {
+    color: inherit;
 }
 
 h2
@@ -25,4 +30,18 @@ ul
 .code
 {
     font-family: "Courier New", Courier, monospace;
+}
+
+.green{
+    background-color: green;
+    }
+.red{
+    background-color: red;
+    }
+
+hr
+{
+    height: 1px;
+    border: none;
+    border-bottom: 1px solid black;
 }
