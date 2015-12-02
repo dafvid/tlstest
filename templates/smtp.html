@@ -1,2 +1,5 @@
 {% extends "host_form.html" %}
 {% block title %}SMTP{% endblock %}
+{% block result %}
+{{ util.print_cert(result) }}
+{% endblock %}
