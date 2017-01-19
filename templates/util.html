@@ -14,7 +14,7 @@
         <li><span class="label">CN:</span> {{ c.cert.cn }}</li>
         <li><span class="label">AN:</span> {{ c.cert.an }}</li>
         <li><span class="code"><b>HASH:</b> {{ c.hash }}</span></li>
-        <li><span class="code"><b>{{match(c.hash,c.tlsa, 'TLSA')}}:</b> {{ c.tlsa }}</span></li>
+        <li><span class="code"><b>{{ match(c.hash,c.tlsa, 'TLSA') }}:</b> {{ c.tlsa }}</span></li>
     </ul>
 {% endmacro %}
 

@@ -1,24 +1,38 @@
 {% extends "base.html" %}
 
 {% block body %}
-<h1>dafnet.se</h1>
-{{ util.print_cert('www.dafnet.se', 443) }}
-{{ util.print_cert('mail.dafnet.se', 443) }}
-{{ util.print_cert('priv.dafnet.se', 443) }}
-{{ util.print_cert('observ.dafnet.se', 443) }}
-<h1>feces.se</h1>
-{# util.print_cert('www.feces.se', 443) #}
-{{ util.print_cert('chat.feces.se', 443) }}
-{{ util.print_cert('git.feces.se', 443) }}
-<h1>dafcorp.net (SMTP)</h1>
-{{ util.print_cert_smtp('datawebb.dafcorp.net', 25) }}
-{{ util.print_cert_smtp('pontus.dafcorp.net', 25) }}
-{{ util.print_cert_smtp('mainframe.dafcorp.net', 25) }}
-<h1>dafcorp.net (SSHFP)</h1>
-{{ util.print_sshfp('datawebb.dafcorp.net', 22) }}
-{{ util.print_sshfp('pontus.dafcorp.net', 22) }}
-{{ util.print_sshfp('mainframe.dafcorp.net', 22) }}
-<h1>Pjotor</h1>
-{# util.print_cert('pean.org', 443) #}
-{# util.print_cert('jails.se', 443) #}
+
+<h1>HTTPS</h1>
+{% if data.tlsa %}
+{% for i in data.tlsa %}
+    {% if i.error %}
+        <h2>{{ i.host }}:{{ i.port }}</h2> <span class="red">{{ i.error }}</span>
+    {% else %}
+        {{ util.print_cert(i) }}
+    {% endif %}
+{% endfor %}
+{% endif %}
+
+<h1>SMTP</h1>
+{% if data.smtp %}
+    {% for i in data.smtp %}
+        {% if i.error %}
+            <h2>{{ i.host }}:{{ i.port }}</h2> <span class="red">{{ i.error }}</span><br>
+        {% else %}
+            {{ util.print_cert(i) }}
+        {% endif %}
+    {% endfor %}
+{% endif %}
+
+<h1>SSHFP</h1>
+{% if data.sshfp %}
+    {% for i in data.sshfp %}
+        {% if i.error %}
+            <h2>{{ i.host }}:{{ i.port }}</h2> <span class="red">{{ i.error }}</span><br>
+        {% else %}
+            {{ util.print_sshfp(i) }}
+        {% endif %}
+    {% endfor %}
+{% endif %}
+
 {% endblock %}
