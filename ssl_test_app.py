@@ -169,6 +169,7 @@ def _make_sshfp_result(host, port=22):
         k = get_ssh_key(host, port)
         result['hash'] = hashlib.sha256(k.asbytes()).hexdigest()
         result['sshfp'] = get_sshfp(host, k)
+        result['match'] = 'yes' if result['hash'] == result['sshfp'] else 'no'
         return result
     except (TimeoutError, dns.exception.DNSException) as e:
         return {'host': host, 'port': port, 'error': str(e)}
@@ -180,6 +181,7 @@ def _make_tlsa_result(host, port, c, dc):
     result['port'] = port
     result['cert'] = _get_cert_data(c)
     result['hash'], result['tlsa'] = _get_tlsa(host, port, dc)
+    result['match'] = 'yes' if result['hash'] == result['tlsa'] else 'no'
     return result
 
 
