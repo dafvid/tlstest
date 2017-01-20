@@ -43,6 +43,9 @@ def overview():
     tlsa.append(_make_https_result('chat.feces.se'))
     tlsa.append(_make_https_result('git.feces.se'))
 
+    tlsa.append(_make_https_result('mainframe.dafcorp.net'))
+    tlsa.append(_make_https_result('datawebb.dafcorp.net'))
+
     data['tlsa'] = tlsa
 
     smtp = list()
@@ -56,8 +59,6 @@ def overview():
     sshfp.append(_make_sshfp_result('datawebb.dafcorp.net'))
 
     data['sshfp'] = sshfp
-
-    print(data)
 
     return render_template('overview.html', data=data)
 
@@ -121,7 +122,7 @@ def smtp():
         port = form.port.data
         result = _make_smtp_result(host, port)
     else:
-        form.host.data = 'mainframe.dafcorp.net'
+        form.host.data = ''
         form.port.data = 25
 
     return render_template('smtp.html', form=form, result=result)
@@ -137,15 +138,15 @@ def sshfp():
         result = _make_sshfp_result(host, port)
 
     else:
-        form.host.data = 'mainframe.dafcorp.net'
+        form.host.data = ''
         form.port.data = 22
 
     return render_template('sshfp.html', form=form, result=result)
 
 
 def _get_context():
-    return ssl.create_default_context(cafile='ca/ca-sha2.pem')
-
+    # return ssl.create_default_context(cafile='ca/ca-sha2.pem')
+    return ssl.create_default_context()
 
 def _get_field(s, d):
     for t in d:
