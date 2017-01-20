@@ -58,6 +58,36 @@ def overview():
     return render_template('overview.html', data=data)
 
 
+@app.route('/api/https/<host>')
+def api_https(host):
+    return jsonify(_make_https_result(host))
+
+
+@app.route('/api/https/<host>/<int:port>')
+def api_https_port(host, port):
+    return jsonify(_make_https_result(host, port))
+
+
+@app.route('/api/smtp/<host>')
+def api_smtp(host):
+    return jsonify(_make_smtp_result(host))
+
+
+@app.route('/api/smtp/<host>/<int:port>')
+def api_smtp_port(host, port=None):
+    return jsonify(_make_smtp_result(host, port))
+
+
+@app.route('/api/sshfp/<host>')
+def api_sshfp(host):
+    return jsonify(_make_sshfp_result(host))
+
+
+@app.route('/api/sshfp/<host>/<int:port>')
+def api_sshfp_port(host, port=None):
+    return jsonify(_make_sshfp_result(host, port))
+
+
 @app.route('/https', methods=['GET', 'POST'])
 def https():
     form = HostForm()
@@ -116,8 +146,8 @@ def _get_field(s, d):
 def _make_https_result(host, port=443):
     try:
         c, dc = get_cert(host, port)
-    except (TimeoutError, ssl.SSLError, dns.exception.DNSException) as e:
-        return {'host': host, 'port': port, 'error': e}
+    except (socket.error, TimeoutError, ssl.SSLError, dns.exception.DNSException) as e:
+        return {'host': host, 'port': port, 'error': str(e)}
 
     return _make_tlsa_result(host, port, c, dc)
 
@@ -125,8 +155,8 @@ def _make_https_result(host, port=443):
 def _make_smtp_result(host, port=25):
     try:
         c, dc = get_cert_smtp(host, port)
-    except (TimeoutError, ssl.SSLError, dns.exception.DNSException) as e:
-        return {'host': host, 'port': port, 'error': e}
+    except (socket.error, TimeoutError, ssl.SSLError, dns.exception.DNSException) as e:
+        return {'host': host, 'port': port, 'error': str(e)}
 
     return _make_tlsa_result(host, port, c, dc)
 
@@ -141,7 +171,7 @@ def _make_sshfp_result(host, port=22):
         result['sshfp'] = get_sshfp(host, k)
         return result
     except (TimeoutError, dns.exception.DNSException) as e:
-        return {'host': host, 'port': port, 'error': e}
+        return {'host': host, 'port': port, 'error': str(e)}
 
 
 def _make_tlsa_result(host, port, c, dc):
