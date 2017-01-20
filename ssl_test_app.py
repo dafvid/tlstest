@@ -1,4 +1,5 @@
 from flask import *
+from flask_json import *
 import ssl
 import socket
 from datetime import *
@@ -18,6 +19,9 @@ from forms import *
 app = Flask(__name__)
 app.debug = True
 app.secret_key = os.urandom(24)
+
+json = FlaskJSON(app)
+app.config['JSON_DATETIME_FORMAT'] = "%Y-%m-%d %H:%M:%S"
 
 
 @app.route('/')
@@ -59,33 +63,39 @@ def overview():
 
 
 @app.route('/api/https/<host>')
+@as_json
 def api_https(host):
-    return jsonify(_make_https_result(host))
+    return _make_https_result(host)
 
 
 @app.route('/api/https/<host>/<int:port>')
+@as_json
 def api_https_port(host, port):
-    return jsonify(_make_https_result(host, port))
+    return _make_https_result(host, port)
 
 
 @app.route('/api/smtp/<host>')
+@as_json
 def api_smtp(host):
-    return jsonify(_make_smtp_result(host))
+    return _make_smtp_result(host)
 
 
 @app.route('/api/smtp/<host>/<int:port>')
+@as_json
 def api_smtp_port(host, port=None):
-    return jsonify(_make_smtp_result(host, port))
+    return _make_smtp_result(host, port)
 
 
 @app.route('/api/sshfp/<host>')
+@as_json
 def api_sshfp(host):
-    return jsonify(_make_sshfp_result(host))
+    return _make_sshfp_result(host)
 
 
 @app.route('/api/sshfp/<host>/<int:port>')
+@as_json
 def api_sshfp_port(host, port=None):
-    return jsonify(_make_sshfp_result(host, port))
+    return _make_sshfp_result(host, port)
 
 
 @app.route('/https', methods=['GET', 'POST'])
