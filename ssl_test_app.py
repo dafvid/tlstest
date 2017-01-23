@@ -108,6 +108,7 @@ def https():
         port = form.port.data
         result = _make_https_result(host, port)
     else:
+        form.host.data = 'mainframe.dafcorp.net'
         form.port.data = 443
 
     return render_template('https.html', form=form, result=result)
@@ -123,6 +124,7 @@ def smtp():
         result = _make_smtp_result(host, port)
     else:
         form.host.data = ''
+        form.host.data = 'mainframe.dafcorp.net'
         form.port.data = 25
 
     return render_template('smtp.html', form=form, result=result)
@@ -139,6 +141,7 @@ def sshfp():
 
     else:
         form.host.data = ''
+        form.host.data = 'mainframe.dafcorp.net'
         form.port.data = 22
 
     return render_template('sshfp.html', form=form, result=result)
@@ -177,10 +180,10 @@ def _make_sshfp_result(host, port=22):
         result = dict()
         result['host'] = host
         result['port'] = port
-        k = get_ssh_key(host, port)
-        result['hash'] = hashlib.sha256(k.asbytes()).hexdigest()
-        result['sshfp'] = get_sshfp(host, k)
-        result['match'] = 'yes' if result['hash'] == result['sshfp'] else 'no'
+        k = _get_ssh_key(host, port)
+        sshfp = _get_sshfp(host)
+        result['sshfp'] = sshfp
+        result['check'] = _check_sshfp(k, sshfp)
         return result
     except (TimeoutError, dns.exception.DNSException) as e:
         return {'host': host, 'port': port, 'error': str(e)}
@@ -275,8 +278,8 @@ def get_cert(host, port):
     return c, dc
 
 
-@app.template_global()
-def get_ssh_key(host, port):
+# @app.template_global()
+def _get_ssh_key(host, port=22):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect((host, port))
     t = pm.Transport(s)
@@ -294,7 +297,7 @@ def get_resolver():
     return r
 
 
-@app.template_global()
+# @app.template_global()
 def get_tlsa(host, port):
     try:
         a = get_resolver().query("_%s._tcp.%s." % (port, host), 'TLSA')
@@ -303,30 +306,98 @@ def get_tlsa(host, port):
         return 'noanswer'
 
 
-@app.template_global()
-def get_sshfp(host, key):
+# @app.template_global()
+def _get_sshfp(host):
+    reply = list()
     try:
         a = get_resolver().query("%s" % host, 'SSHFP')
-        # key_type = -1
-        if type(key) is pm.rsakey.RSAKey:
-            key_type = 1
-        elif type(key) is pm.dsskey.DSSKey:
-            key_type = 2
-        elif type(key) is pm.ecdsakey.ECDSAKey:
-            key_type = 3
-        else:
-            return 'ogiltigtyp'
         for r in a:
-            if r.algorithm == key_type and r.fp_type == 2:
-                return binascii.hexlify(r.fingerprint).decode()
-        return 'detsketsig'
-    except dns.resolver.NoAnswer:
-        return 'noanswer'
+            d = dict()
+
+            if r.algorithm == 1:
+                d['algorithm_type'] = 'RSA'
+            elif r.algorithm == 2:
+                d['algorithm_type'] = 'DSA'
+            elif r.algorithm == 3:
+                d['algorithm_type'] = 'ECDSA'
+            elif r.algorithm == 4:
+                d['algorithm_type'] = 'ED25519'
+            else:
+                d['error'] = 'SSHFP ALGORITHM ERROR (%s)' % r.algorithm
+                reply.append(d)
+                break
+            d['algorithm_code'] = r.algorithm
+
+            if r.fp_type == 1:
+                d['fingerprint_type'] = 'SHA-1'
+            elif r.fp_type == 2:
+                d['fingerprint_type'] = 'SHA-256'
+            else:
+                d['error'] = 'SSHFP FINGERPRINT ERROR (%s)' % r.fp_type
+                reply.append(d)
+                break
+            d['fingerprint_code'] = r.fp_type
+            d['fingerprint'] = binascii.hexlify(r.fingerprint).decode()
+            reply.append(d)
+
+    except dns.resolver.NoAnswer as e:
+        return [{'error': str(e)}]
+
+    return reply
+
+
+def _check_sshfp(key, sshfp):
+    d = dict()
+    if type(key) is pm.rsakey.RSAKey:
+        key_type = 1
+    elif type(key) is pm.dsskey.DSSKey:
+        key_type = 2
+    elif type(key) is pm.ecdsakey.ECDSAKey:
+        key_type = 3
+    else:
+        return {'error': 'INVALID_KEY_TYPE'}
+
+    d['key_sshfp_type_code'] = key_type
+    d['key_type_str'] = key.get_name()
+    d['key_sha1'] = hashlib.sha1(key.asbytes()).hexdigest()
+    d['key_sha256'] = hashlib.sha256(key.asbytes()).hexdigest()
+    d['sshfp_sha1'] = ''
+    d['sshfp_sha256'] = ''
+    d['sha1_match'] = ''
+    d['sha256_match'] = ''
+
+    fp_found = False
+    for i in sshfp:
+        if 'error' in i:
+            continue
+        if i['algorithm_code'] == key_type:
+            fp_found = True
+            if i['fingerprint_code'] == 1:
+                d['sshfp_sha1'] = i['fingerprint']
+                d['sha1_match'] = eq_yn(d['key_sha1'], i['fingerprint'])
+            elif i['fingerprint_code'] == 2:
+                d['sshfp_sha256'] = i['fingerprint']
+                d['sha256_match'] = eq_yn(d['key_sha256'], i['fingerprint'])
+
+    if not fp_found:
+        return {'error': 'FINGERPRINT_NOT_FOUND'}
+
+    return d
 
 
 @app.template_global()
 def is_none(test):
     return test is None
+
+
+@app.template_global()
+def eq_yn(test, test2):
+    return 'yes' if test == test2 else 'no'
+
+
+@app.template_global()
+def match_class(match):
+    return 'green' if match == 'yes' else 'red'
 
 
 @app.template_filter('df')
@@ -339,4 +410,4 @@ def join_filter(a):
     return ', '.join(a)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=80)
+    app.run(host='0.0.0.0', port=80, threaded=True)

@@ -1,66 +1,48 @@
-{% macro print_cert_overview(host,port) %}
-    {{ _print_cert(host, port, get_cert(host,port)) }}
-{% endmacro %}
-
-{% macro print_cert_smtp(host, port) %}
-    {{ _print_cert(host, port, get_cert_smtp(host, port)) }}
-{% endmacro %}
-
 {% macro print_cert(c) %}
     <h2>{{ c.host }}:{{ c.port }}</h2>
+    {% if c.error %}
+        <p>{{ c.error }}</p>
+    {% else %}
     <ul>
-        <li><span class="label">Från:</span> {{  c.cert.from_d|df }}</li>
-        <li><span class="label">Till:</span> {{ c.cert.to_d|df }}</li>
-        <li><span class="label">CN:</span> {{ c.cert.cn }}</li>
-        <li><span class="label">AN:</span> {{ c.cert.an }}</li>
-        <li><span class="code"><b>HASH:</b> {{ c.hash }}</span></li>
-        <li><span class="code"><b>{{ match(c.hash,c.tlsa, 'TLSA') }}:</b> {{ c.tlsa }}</span></li>
+        <li><span class="label">Från: </span> {{  c.cert.from_d|df }}</li>
+        <li><span class="label">Till: </span> {{ c.cert.to_d|df }}</li>
+        <li><span class="label">CN: </span> {{ c.cert.cn }}</li>
+        <li><span class="label">AN: </span> {{ c.cert.an }}</li>
+        <li><span class="code"><b>HASH: </b> {{ c.hash }}</span></li>
+        <li><span class="code"><b>TLSA: </b><span class="{{ match_class(c.match) }}">{{ c.tlsa }}</span></span></li>
     </ul>
-{% endmacro %}
-
-{% macro _print_cert(host,port,c) %}
-    <h2>{{ host }}</h2>
-    <ul>
-        <li><span class="label">Från:</span> {{  c|df }}</li>
-        <li><span class="label">Till:</span> {{ c[1]|df }}</li>
-        <li><span class="label">CN:</span> {{ c[2] }}</li>
-        <li><span class="label">AN:</span> {{ c[3] }}</li>
-        <li><span class="code"><b>HASH:</b> {{ c[4].upper() }}</span></li>
-        <li><span class="code"><b>{{match(c[4].upper(),get_tlsa(host,port).upper(), 'TLSA')}}:</b> {{ get_tlsa(host,port).upper() }}</span></li>
-    </ul>
-{% endmacro %}
-
-{% macro print_sshfp_overview(host, port) %}
-    {{ _print_sshfp(host, port, get_ssh_key(host,port)) }}
-{% endmacro %}
-
-{% macro _print_sshfp(host, port, key) %}
-    <h2>{{ host }}</h2>
-    <ul>
-        <li><span class="code"><b>&nbsp;&nbsp;&nbsp;FP:</b> {{ key[1].upper() }}</span></li>
-        <li><span class="code"><b>SSHFP:</b> {{ get_sshfp(host, key[0]).upper() }}</span></li>
-    </ul>
+    {% endif %}
 {% endmacro %}
 
 {% macro print_sshfp(r) %}
     <h2>{{ r.host }}:{{ r.port }}</h2>
     <ul>
-        <li><span class="code"><b>&nbsp;&nbsp;&nbsp;FP:</b> {{ r.hash.upper() }}</span></li>
-        <li><span class="code"><b>{{match(r.hash,r.sshfp, 'SSHFP')}}:</b> {{ r.sshfp.upper() }}</span></li>
+        <li><span class="code"><b>Key type:</b> {{ r.check.key_type_str }} ({{ r.check.key_sshfp_type_code }})</span></li>
+        <li><span class="code"><b>Key SHA-1:&nbsp;&nbsp;</b> {{ r.check.key_sha1.upper() }}</span></li>
+        <li><span class="code"><b>SSHFP SHA-1:</b> <span class="{{ match_class(r.check.sha1_match) }}">{{ r.check.sshfp_sha1.upper() }}</span></span></li>
+        <li><span class="code"><b>Key SHA-256:&nbsp;&nbsp;</b> {{ r.check.key_sha256.upper() }}</span></li>
+        <li><span class="code"><b>SSHFP SHA-256:</b> <span class="{{ match_class(r.check.sha256_match) }}">{{ r.check.sshfp_sha256.upper() }}</span></span></li>
     </ul>
+
+    <table>
+        <tr>
+            <th>Type</th>
+            <th>FP type</th>
+            <th>Fingerprint</th>
+        </tr>
+        {% for i in r.sshfp %}
+            <tr>
+                <td> {{ i.algorithm_type }} ({{ i.algorithm_code }})</td>
+                <td> {{ i.fingerprint_type }} ({{ i.fingerprint_code }})</td>
+                <td> {{ i.fingerprint }}</td>
+            </tr>
+        {% endfor %}
+    </table>
 {% endmacro %}
 
 {% macro link(route, text) %}
 <a href="{{ url_for(route) }}">{{ text }}</a>
 {% endmacro %}
-
-{%- macro match(test1, test2, text) -%}
-    {%- if test1 == test2 -%}
-<span class="green" title="Records match">
-    {%- else -%}
-<span class="red" title="Records don't match">
-    {%- endif -%}
-{{ text }}</span>{% endmacro %}
 
 {% macro rf(f) %}
 <b>{{ f.label }}</b>: {{ f }} <span style="color:red">{{ f.errors|join }}</span><br>

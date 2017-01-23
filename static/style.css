@@ -32,11 +32,11 @@ ul
     font-family: "Courier New", Courier, monospace;
 }
 
-.green{
-    background-color: green;
+.green {
+    background-color: lightgreen;
     }
-.red{
-    background-color: red;
+.red {
+    background-color: lightpink;
     }
 
 hr
@@ -44,4 +44,31 @@ hr
     height: 1px;
     border: none;
     border-bottom: 1px solid black;
+}
+
+table {
+    border-collapse: collapse;
+    border: 2px solid black;
+    font-size: 12px;
+    margin-top: 4px;
+    margin-bottom:2px;
+}
+th{
+    text-align: left;
+    /*border: 1px solid black;*/
+    border-bottom: 2px solid black;
+    background-color: lightgray;
+    padding-left: 4px;
+    padding-right: 4px;
+    white-space: nowrap;
+}
+td{
+    font-family: Fixed, monospace;
+    border-bottom: 1px solid grey;
+    border-left: 1px solid grey;
+    padding-left: 4px;
+    padding-right: 4px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    white-space: nowrap;
 }
