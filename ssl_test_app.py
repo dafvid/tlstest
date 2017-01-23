@@ -157,7 +157,7 @@ def _get_field(s, d):
 def _make_https_result(host, port=443):
     try:
         c, dc = get_cert(host, port)
-    except (socket.error, TimeoutError, ssl.SSLError, dns.exception.DNSException) as e:
+    except (socket.error, TimeoutError, ssl.SSLError, ssl.CertificateError, dns.exception.DNSException) as e:
         return {'host': host, 'port': port, 'error': str(e)}
 
     return _make_tlsa_result(host, port, c, dc)
@@ -166,7 +166,7 @@ def _make_https_result(host, port=443):
 def _make_smtp_result(host, port=25):
     try:
         c, dc = get_cert_smtp(host, port)
-    except (socket.error, TimeoutError, ssl.SSLError, dns.exception.DNSException) as e:
+    except (socket.error, TimeoutError, ssl.SSLError, ssl.CertificateError, dns.exception.DNSException) as e:
         return {'host': host, 'port': port, 'error': str(e)}
 
     return _make_tlsa_result(host, port, c, dc)
