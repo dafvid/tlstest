@@ -16,6 +16,9 @@
 
 {% macro print_sshfp(r) %}
     <h2>{{ r.host }}:{{ r.port }}</h2>
+    {% if r.error %}
+        <p>{{ r.error }}</p>
+    {% else %}
     <ul>
         <li><span class="code"><b>Key type:</b> {{ r.check.key_type_str }} ({{ r.check.key_sshfp_type_code }})</span></li>
         <li><span class="code"><b>Key SHA-1:&nbsp;&nbsp;</b> {{ r.check.key_sha1.upper() }}</span></li>
@@ -38,6 +41,7 @@
             </tr>
         {% endfor %}
     </table>
+    {% endif %}
 {% endmacro %}
 
 {% macro link(route, text) %}
