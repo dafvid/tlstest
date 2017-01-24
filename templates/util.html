@@ -8,8 +8,16 @@
         <li><span class="label">Till: </span> {{ c.cert.to_d|df }}</li>
         <li><span class="label">CN: </span> {{ c.cert.cn }}</li>
         <li><span class="label">AN: </span> {{ c.cert.an }}</li>
-        <li><span class="code"><b>HASH: </b> {{ c.hash }}</span></li>
-        <li><span class="code"><b>TLSA: </b><span class="{{ match_class(c.match) }}">{{ c.tlsa }}</span></span></li>
+        <hr/>
+        <li><span class="code"><b>AD: </b><span class="{{ match_class(c.tlsa.ad) }}">{{ c.tlsa.ad }}</span></span></li>
+        <li><span class="code"><b>Cert SHA-256: </b> {{ c.cert.sha256 }}</span></li>
+        {% if c.tlsa.sha256 %}
+            <li><span class="code"><b>TLSA SHA-256: </b><span class="{{ match_class(c.check.match_sha256) }}">{{ c.tlsa.sha256 }}</span></span></li>
+        {% endif %}
+        <li><span class="code"><b>Cert SHA-512: </b> {{ c.cert.sha512 }}</span></li>
+        {% if c.tlsa.sha512 %}
+            <li><span class="code"><b>TLSA SHA-512: </b><span class="{{ match_class(c.check.match_sha512) }}">{{ c.tlsa.sha512 }}</span></span></li>
+        {% endif %}
     </ul>
     {% endif %}
 {% endmacro %}

@@ -17,8 +17,7 @@ from forms import *
 
 
 app = Flask(__name__)
-app.debug = True
-app.secret_key = os.urandom(24)
+app.secret_key = "123456789"
 
 json = FlaskJSON(app)
 app.config['JSON_DATETIME_FORMAT'] = "%Y-%m-%d %H:%M:%S"
@@ -191,7 +190,7 @@ def _get_cert_smtp(host, port):
                     got_tls = True
 
         s.setblocking(True)
-        ssl_context = _get_context()
+        ssl_context = _get_context(False)
         # ssl_context.check_hostname = False
         ssl_sock = ssl_context.wrap_socket(s)
         c = ssl_sock.getpeercert()
@@ -277,12 +276,24 @@ def _make_https_result(host, port=443):
 
 
 def _make_smtp_result(host, port=25):
+    result = dict()
+    result['host'] = host
+    result['port'] = port
+    error = list()
     try:
         c, dc = _get_cert_smtp(host, port)
+        cert = _get_cert_data(c, dc)
+        result['cert'] = cert
+        tlsa = _get_tlsa(host, port)
+        result['tlsa'] = tlsa
+        result['check'] = _check_tlsa(cert, tlsa)
     except (socket.error, TimeoutError, ssl.SSLError, ssl.CertificateError, dns.exception.DNSException) as e:
-        return {'host': host, 'port': port, 'error': str(e)}
+        error.append(str(e))
 
-    return _check_tlsa(host, port, c, dc)
+    if error:
+        result['error'] = error
+
+    return result
 
 
 def _get_ssh_key(host, port=22):
@@ -424,4 +435,6 @@ def join_filter(a):
     return ', '.join(a)
 
 if __name__ == '__main__':
+    app.config['TEMPLATES_AUTO_RELOAD'] = True
+    app.debug = True
     app.run(host='0.0.0.0', port=80, threaded=True)
