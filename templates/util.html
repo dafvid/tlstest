@@ -19,12 +19,19 @@
     {% if r.error %}
         <p>{{ r.error }}</p>
     {% else %}
+    {% if r.check.error %}
+        <p>{{ r.check.error }}</p>
+    {% else %}
     <ul>
         <li><span class="code"><b>Key type:</b> {{ r.check.key_type_str }} ({{ r.check.key_sshfp_type_code }})</span></li>
-        <li><span class="code"><b>Key SHA-1:&nbsp;&nbsp;</b> {{ r.check.key_sha1.upper() }}</span></li>
-        <li><span class="code"><b>SSHFP SHA-1:</b> <span class="{{ match_class(r.check.sha1_match) }}">{{ r.check.sshfp_sha1.upper() }}</span></span></li>
-        <li><span class="code"><b>Key SHA-256:&nbsp;&nbsp;</b> {{ r.check.key_sha256.upper() }}</span></li>
-        <li><span class="code"><b>SSHFP SHA-256:</b> <span class="{{ match_class(r.check.sha256_match) }}">{{ r.check.sshfp_sha256.upper() }}</span></span></li>
+        {% if r.check.sshfp_sha1 %}
+            <li><span class="code"><b>Key SHA-1:&nbsp;&nbsp;</b> {{ r.check.key_sha1.upper() }}</span></li>
+            <li><span class="code"><b>SSHFP SHA-1:</b> <span class="{{ match_class(r.check.sha1_match) }}">{{ r.check.sshfp_sha1.upper() }}</span></span></li>
+        {% endif %}
+        {% if r.check.sshfp_sha256 %}
+            <li><span class="code"><b>Key SHA-256:&nbsp;&nbsp;</b> {{ r.check.key_sha256.upper() }}</span></li>
+            <li><span class="code"><b>SSHFP SHA-256:</b> <span class="{{ match_class(r.check.sha256_match) }}">{{ r.check.sshfp_sha256.upper() }}</span></span></li>
+        {% endif %}
     </ul>
 
     <table>
@@ -41,6 +48,7 @@
             </tr>
         {% endfor %}
     </table>
+    {% endif %}
     {% endif %}
 {% endmacro %}
 
