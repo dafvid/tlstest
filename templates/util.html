@@ -31,6 +31,7 @@
         <p>{{ r.check.error }}</p>
     {% else %}
     <ul>
+        <li><span class="code"><b>AD: </b><span class="{{ match_class(r.sshfp.ad) }}">{{ r.sshfp.ad }}</span></span></li>
         <li><span class="code"><b>Key type:</b> {{ r.check.key_type_str }} ({{ r.check.key_sshfp_type_code }})</span></li>
         {% if r.check.sshfp_sha1 %}
             <li><span class="code"><b>Key SHA-1:&nbsp;&nbsp;</b> {{ r.check.key_sha1.upper() }}</span></li>
@@ -48,7 +49,7 @@
             <th>FP type</th>
             <th>Fingerprint</th>
         </tr>
-        {% for i in r.sshfp %}
+        {% for i in r.sshfp.rrd %}
             <tr>
                 <td> {{ i.algorithm_type }} ({{ i.algorithm_code }})</td>
                 <td> {{ i.fingerprint_type }} ({{ i.fingerprint_code }})</td>
