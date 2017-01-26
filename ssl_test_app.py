@@ -133,7 +133,7 @@ def sshfp():
 
 def _get_resolver():
     r = dns.resolver.Resolver()
-    r.nameservers = ['8.8.8.8']
+    # r.nameservers = ['8.8.8.8']
     r.use_edns(0, dns.flags.DO, 1280)
     return r
 
@@ -297,14 +297,65 @@ def _make_smtp_result(host, port=25):
 
 
 def _get_ssh_key(host, port=22):
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect((host, port))
-    t = pm.Transport(s)
-    t.start_client()
-    k = t.get_remote_server_key()
-    t.close()
-    s.close()
-    return k
+    key_d = dict()
+    s1 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s1.connect((host, port))
+    t1 = pm.Transport(s1)
+    so1 = t1.get_security_options()
+
+    rsa_types = [x for x in so1.key_types if 'rsa' in x]
+    dsa_types = [x for x in so1.key_types if 'dss' in x]
+    ecdsa_types = [x for x in so1.key_types if 'ecdsa' in x]
+
+    t1.close()
+    s1.close()
+
+    def get_keys(types):
+        d = dict()
+        for ty in types:
+            # print("Trying:", ty)
+            s2 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s2.connect((host, port))
+            t2 = pm.Transport(s2)
+            so = t2.get_security_options()
+            try:
+                so.key_types = [ty]
+                t2.start_client()
+                key = t2.get_remote_server_key()
+                t2.close()
+                s2.close()
+
+                if type(key) is pm.rsakey.RSAKey:
+                    key_type = 1
+                elif type(key) is pm.dsskey.DSSKey:
+                    key_type = 2
+                elif type(key) is pm.ecdsakey.ECDSAKey:
+                    key_type = 3
+                else:
+                    continue
+
+                d['sshfp_type_code'] = key_type
+                d['type_str'] = key.get_name()
+                d['sha1'] = hashlib.sha1(key.asbytes()).hexdigest()
+                d['sha256'] = hashlib.sha256(key.asbytes()).hexdigest()
+                break
+            except (Exception, ValueError, pm.SSHException, pm.ssh_exception.SSHException) as e:
+                d['error'] = str(e)
+            t2.close()
+            s2.close()
+        return d
+
+    k = get_keys(rsa_types)
+    if k:
+        key_d['rsa'] = k
+    k = get_keys(dsa_types)
+    if k:
+        key_d['dsa'] = k
+    k = get_keys(ecdsa_types)
+    if k:
+        key_d['ecdsa'] = k
+
+    return key_d
 
 
 def _get_sshfp(host):
@@ -349,36 +400,30 @@ def _get_sshfp(host):
 
 def _check_sshfp(key, sshfp):
     d = dict()
-    if type(key) is pm.rsakey.RSAKey:
-        key_type = 1
-    elif type(key) is pm.dsskey.DSSKey:
-        key_type = 2
-    elif type(key) is pm.ecdsakey.ECDSAKey:
-        key_type = 3
-    else:
-        return {'error': 'UNKNOWN_KEY_TYPE'}
-
-    d['key_sshfp_type_code'] = key_type
-    d['key_type_str'] = key.get_name()
-    d['key_sha1'] = hashlib.sha1(key.asbytes()).hexdigest()
-    d['key_sha256'] = hashlib.sha256(key.asbytes()).hexdigest()
-    d['sshfp_sha1'] = ''
-    d['sshfp_sha256'] = ''
-    d['sha1_match'] = ''
-    d['sha256_match'] = ''
 
     fp_found = False
+    key_types = {1: 'rsa', 2: 'dsa', 3: 'ecdsa', 4: 'ed25519'}
     for i in sshfp['rrd']:
         if 'error' in i:
             continue
-        if i['algorithm_code'] == key_type:
-            fp_found = True
-            if i['fingerprint_code'] == 1:
-                d['sshfp_sha1'] = i['fingerprint']
-                d['sha1_match'] = eq_yn(d['key_sha1'], i['fingerprint'])
-            elif i['fingerprint_code'] == 2:
-                d['sshfp_sha256'] = i['fingerprint']
-                d['sha256_match'] = eq_yn(d['key_sha256'], i['fingerprint'])
+        type_code = i['algorithm_code']
+        if type_code in key_types:
+            key_type = key_types[type_code]
+            if key_type in key:
+                k = key[key_type]
+                if 'error' not in k:
+                    fp_found = True
+                    if not key_type in d:
+                        d[key_type] = dict()
+                    if i['fingerprint_code'] == 1:
+                        d[key_type]['sshfp_sha1'] = i['fingerprint']
+                        d[key_type]['key_sha1'] = k['sha1']
+                        d[key_type]['sha1_match'] = eq_yn(k['sha1'], i['fingerprint'])
+                    elif i['fingerprint_code'] == 2:
+                        d[key_type]['sshfp_sha256'] = i['fingerprint']
+                        d[key_type]['key_sha256'] = k['sha256']
+                        d[key_type]['sha256_match'] = eq_yn(k['sha256'], i['fingerprint'])
+
 
     if not fp_found:
         return {'error': 'FINGERPRINT_NOT_FOUND'}
@@ -393,6 +438,7 @@ def _make_sshfp_result(host, port=22):
     error = list()
     try:
         k = _get_ssh_key(host, port)
+        result['key'] = k
         sshfp = _get_sshfp(host)
         result['sshfp'] = sshfp
         result['check'] = _check_sshfp(k, sshfp)
