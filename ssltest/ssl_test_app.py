@@ -2,6 +2,8 @@ import binascii
 import hashlib
 import socket
 import ssl
+import OpenSSL
+from cryptography.hazmat.primitives import serialization
 from datetime import *
 from smtplib import SMTP
 
@@ -12,6 +14,7 @@ import paramiko as pm
 from flask import *
 from flask_json import *
 from ssltest.forms import *
+import ssltest.util as util
 
 app = Flask(__name__)
 app.secret_key = "123456789"
@@ -163,7 +166,7 @@ def _get_cert(host, port):
 
 
 def _get_cert_smtp(host, port):
-    print("Fetch SMTP cert for %s:%s" % (host, port))
+    # print("Fetch SMTP cert for %s:%s" % (host, port))
     with SMTP(host, port) as client:
         # client.set_debuglevel(True)
         client.ehlo_or_helo_if_needed()
@@ -184,9 +187,20 @@ def _get_cert_data(c, dc):
     result['from_d'] = datetime.strptime(c['notBefore'], "%b %d %H:%M:%S %Y %Z")
     result['to_d'] = datetime.strptime(c['notAfter'], "%b %d %H:%M:%S %Y %Z")
     result['cn'] = _get_field('commonName', c['subject'])
+    result['issuer'] = "%s, %s, %s" % (_get_field('commonName', c['issuer']), _get_field('organizationName', c['issuer']), _get_field('countryName', c['issuer']))
     result['an'] = ", ".join([x[1] for x in c['subjectAltName'] if x[0] == 'DNS'])
     result['sha256'] = hashlib.sha256(dc).hexdigest()
     result['sha512'] = hashlib.sha512(dc).hexdigest()
+
+    oc = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_ASN1, dc)
+    pk = oc.get_pubkey().to_cryptography_key()
+    pkb = pk.public_bytes(
+        encoding=serialization.Encoding.DER,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo
+    )
+
+    result['spki_sha256'] = hashlib.sha256(pkb).hexdigest()
+    result['spki_sha512'] = hashlib.sha512(pkb).hexdigest()
     return result
 
 
@@ -198,6 +212,7 @@ def _get_tlsa(host, port):
         tlsa['ad'] = yn('AD' in dns.flags.to_text(a.response.flags))
         for ans in a:
             if ans.usage == 3:
+                tlsa['selector'] = ans.selector
                 if ans.selector == 0:  # full cert
                     if ans.mtype == 1:  # SHA256
                         if 'sha256' in tlsa:
@@ -208,16 +223,26 @@ def _get_tlsa(host, port):
                             error.append('MULTIPLE SHA512 RECORDS')
                         tlsa['sha512'] = binascii.hexlify(ans.cert).decode()
                     else:
-                        error.append('UNKNOWN HASH')
+                        error.append('UNKNOWN HASH: %s' % ans.mtype)
+                elif ans.selector == 1:  # SPKI
+                    if ans.mtype == 1:  # SHA256
+                        if 'spki_sha256' in tlsa:
+                            error.append('MULTIPLE SPKI SHA256 RECORDS')
+                        tlsa['spki_sha256'] = binascii.hexlify(ans.cert).decode()
+                    elif ans.mtype == 2:  # SHA512
+                        if 'spki_sha512' in tlsa:
+                            error.append('MULTIPLE SPKI SHA512 RECORDS')
+                        tlsa['spki_sha512'] = binascii.hexlify(ans.cert).decode()
+                    else:
+                        error.append('UNKNOWN SPKI HASH: %s' % ans.mtype)
                 else:
-                    error.append('UNKNOWN SELECTOR')
+                    error.append('UNKNOWN SELECTOR: %s' % ans.selector)
             else:
                 error.append('UNKNOWN USAGE')
     except dns.exception.DNSException as e:
         error.append(str(e))
 
-    if error:
-        tlsa['error'] = error
+    tlsa['error'] = error
 
     return tlsa
 
@@ -226,6 +251,8 @@ def _check_tlsa(cert, tlsa):
     check = dict()
     check['match_sha256'] = yn('sha256' in tlsa and cert['sha256'] == tlsa['sha256'])
     check['match_sha512'] = yn('sha512' in tlsa and cert['sha512'] == tlsa['sha512'])
+    check['match_spki_sha256'] = yn('spki_sha256' in tlsa and cert['spki_sha256'] == tlsa['spki_sha256'])
+    check['match_spki_sha512'] = yn('spki_sha512' in tlsa and cert['spki_sha512'] == tlsa['spki_sha512'])
     return check
 
 
@@ -244,8 +271,7 @@ def _make_https_result(host, port=443):
     except (socket.error, TimeoutError, ssl.SSLError, ssl.CertificateError, dns.exception.DNSException) as e:
         error.append(str(e))
 
-    if error:
-        result['error'] = error
+    result['error'] = error
 
     return result
 
@@ -265,8 +291,7 @@ def _make_smtp_result(host, port=25):
     except (socket.error, TimeoutError, ssl.SSLError, ssl.CertificateError, dns.exception.DNSException) as e:
         error.append(str(e))
 
-    if error:
-        result['error'] = error
+    result['error'] = error
 
     return result
 
