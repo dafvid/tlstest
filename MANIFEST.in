@@ -1,0 +1,2 @@
+recursive-include ssltest/templates *
+recursive-include ssltest/static *
