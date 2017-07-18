@@ -8,5 +8,5 @@ setup(name='ssltest',
       packages=['ssltest'],
       include_package_data=True,
       zip_safe=False,
-      install_requires=['flask', 'paramiko', 'dnspython']
+      install_requires=['flask', 'paramiko', 'dnspython', 'PyOpenSSL']
       )
