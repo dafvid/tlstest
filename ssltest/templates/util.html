@@ -4,12 +4,14 @@
         <p>{{ e }}</p>
     {% endfor %}
     {% if c.tlsa.error %}
-    TLSA ERROR
-    <ul>
-    {% for e in c.tlsa.error %}
-        <li>{{ e }}</li>
-    {% endfor %}
-    </ul>
+        {% if c.tlsa.error %}
+            TLSA ERROR
+            <ul>
+            {% for e in c.tlsa.error %}
+                <li>{{ e }}</li>
+            {% endfor %}
+            </ul>
+        {% endif %}
     {% endif %}
     <ul>
         <li><span class="label">Issuer: </span> {{  c.cert.issuer }}</li>
