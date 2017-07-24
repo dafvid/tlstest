@@ -3,48 +3,52 @@
     {% for e in c.error %}
         <p>{{ e }}</p>
     {% endfor %}
-    {% if c.tlsa %}
-        {% if c.tlsa.error %}
-            TLSA ERROR
-            <ul>
-            {% for e in c.tlsa.error %}
-                <li>{{ e }}</li>
-            {% endfor %}
-            </ul>
+    {% if not c.cert %}
+        <p>Kunde inte hitta certifikat</p>
+    {% else %}
+        {% if c.tlsa %}
+            {% if c.tlsa.error %}
+                TLSA ERROR
+                <ul>
+                {% for e in c.tlsa.error %}
+                    <li>{{ e }}</li>
+                {% endfor %}
+                </ul>
+            {% endif %}
         {% endif %}
-    {% endif %}
-    <ul>
-        <li><span class="label">Issuer: </span> {{  c.cert.issuer }}</li>
-        <li><span class="label">Från: </span> {{  c.cert.from_d|df }}</li>
-        <li><span class="label">Till: </span> {{ c.cert.to_d|df }}</li>
-        <li><span class="label">CN: </span> {{ c.cert.cn }}</li>
-        <li><span class="label">AN: </span> {{ c.cert.an }}</li>
+        <ul>
+            <li><span class="label">Issuer: </span> {{  c.cert.issuer }}</li>
+            <li><span class="label">Från: </span> {{  c.cert.from_d|df }}</li>
+            <li><span class="label">Till: </span> {{ c.cert.to_d|df }}</li>
+            <li><span class="label">CN: </span> {{ c.cert.cn }}</li>
+            <li><span class="label">AN: </span> {{ c.cert.an }}</li>
 
-    </ul>
-    <hr/>
-    <span class="code"><b>AD: </b><span class="{{ match_class(c.tlsa.ad) }}">{{ c.tlsa.ad }}</span></span>
-    <ul>
-        <h3>Cert hashes</h3>
-        <li><span class="code"><b>Cert SHA-256: </b> {{ c.cert.sha256 }}</span></li>
-        {% if c.tlsa.sha256 %}
-            <li><span class="code"><b>TLSA SHA-256: </b><span class="{{ match_class(c.check.match_sha256) }}">{{ c.tlsa.sha256 }}</span></span></li>
-        {% endif %}
-        <li><span class="code"><b>Cert SHA-512: </b> {{ c.cert.sha512 }}</span></li>
-        {% if c.tlsa.sha512 %}
-            <li><span class="code"><b>TLSA SHA-512: </b><span class="{{ match_class(c.check.match_sha512) }}">{{ c.tlsa.sha512 }}</span></span></li>
-        {% endif %}
-    </ul>
-    <ul>
-        <h3>SPKI hashes</h3>
-        <li><span class="code"><b>SPKI SHA-256: </b> {{ c.cert.spki_sha256 }}</span></li>
-        {% if c.tlsa.spki_sha256 %}
-            <li><span class="code"><b>TLSA SPKI SHA-256: </b><span class="{{ match_class(c.check.match_spki_sha256) }}">{{ c.tlsa.spki_sha256 }}</span></span></li>
-        {% endif %}
-        <li><span class="code"><b>SPKI SHA-512: </b> {{ c.cert.spki_sha512 }}</span></li>
-        {% if c.tlsa.spki_sha512 %}
-            <li><span class="code"><b>TLSA SPKI SHA-512: </b><span class="{{ match_class(c.check.match_spki_sha512) }}">{{ c.tlsa.spki_sha512 }}</span></span></li>
-        {% endif %}
-    </ul>
+        </ul>
+        <hr/>
+        <span class="code"><b>AD: </b><span class="{{ match_class(c.tlsa.ad) }}">{{ c.tlsa.ad }}</span></span>
+        <ul>
+            <h3>Cert hashes</h3>
+            <li><span class="code"><b>Cert SHA-256: </b> {{ c.cert.sha256 }}</span></li>
+            {% if c.tlsa.sha256 %}
+                <li><span class="code"><b>TLSA SHA-256: </b><span class="{{ match_class(c.check.match_sha256) }}">{{ c.tlsa.sha256 }}</span></span></li>
+            {% endif %}
+            <li><span class="code"><b>Cert SHA-512: </b> {{ c.cert.sha512 }}</span></li>
+            {% if c.tlsa.sha512 %}
+                <li><span class="code"><b>TLSA SHA-512: </b><span class="{{ match_class(c.check.match_sha512) }}">{{ c.tlsa.sha512 }}</span></span></li>
+            {% endif %}
+        </ul>
+        <ul>
+            <h3>SPKI hashes</h3>
+            <li><span class="code"><b>SPKI SHA-256: </b> {{ c.cert.spki_sha256 }}</span></li>
+            {% if c.tlsa.spki_sha256 %}
+                <li><span class="code"><b>TLSA SPKI SHA-256: </b><span class="{{ match_class(c.check.match_spki_sha256) }}">{{ c.tlsa.spki_sha256 }}</span></span></li>
+            {% endif %}
+            <li><span class="code"><b>SPKI SHA-512: </b> {{ c.cert.spki_sha512 }}</span></li>
+            {% if c.tlsa.spki_sha512 %}
+                <li><span class="code"><b>TLSA SPKI SHA-512: </b><span class="{{ match_class(c.check.match_spki_sha512) }}">{{ c.tlsa.spki_sha512 }}</span></span></li>
+            {% endif %}
+        </ul>
+    {% endif %}
 {% endmacro %}
 
 {% macro print_sshfp(r) %}
