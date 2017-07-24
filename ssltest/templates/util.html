@@ -3,7 +3,7 @@
     {% for e in c.error %}
         <p>{{ e }}</p>
     {% endfor %}
-    {% if c.tlsa.error %}
+    {% if c.tlsa %}
         {% if c.tlsa.error %}
             TLSA ERROR
             <ul>
