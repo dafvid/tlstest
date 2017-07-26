@@ -298,6 +298,9 @@ def _make_tlsa_records(c, cert, port):
     if not hosts:
         return list()
 
+    if not hosts:
+        return list()
+
     host = hosts[1]  # TODO Multiple domains
     if host.count('.') == 1:
         domain = host
@@ -328,7 +331,6 @@ def _make_tlsa_records(c, cert, port):
                         d = cert['spki_sha512']
 
                     r = "_%s._tcp%s IN TLSA %s %s %s %s" % (port, host, u, s, t, d)
-                    print(r)
                     records.append(r)
 
     return records
