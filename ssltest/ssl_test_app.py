@@ -270,7 +270,7 @@ def _make_result(host, port, type):
     try:
         if type == 'https':
             c, dc = _get_cert(host, port)
-        elif type == smtp:
+        elif type == 'smtp':
             c, dc = _get_cert_smtp(host, port)
         else:
             raise Exception("Unknown type")
