@@ -48,7 +48,19 @@
                 <li><span class="code"><b>TLSA SPKI SHA-512: </b><span class="{{ match_class(c.check.match_spki_sha512) }}">{{ c.tlsa.spki_sha512 }}</span></span></li>
             {% endif %}
         </ul>
+
+
     {% endif %}
+{% endmacro %}
+
+{% macro print_tlsa_records(records) %}
+    <hr/>
+    TLSA-records
+    <ul>
+    {% for r in records -%}
+        <li>{{ r }}</li>
+    {% endfor %}
+        </ul>
 {% endmacro %}
 
 {% macro print_sshfp(r) %}

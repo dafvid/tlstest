@@ -10,6 +10,9 @@ from smtplib import SMTP
 import dns.edns
 import dns.flags
 import dns.resolver
+import dns.zone
+import dns.rdtypes
+
 import paramiko as pm
 from flask import *
 from flask_json import *
@@ -178,17 +181,20 @@ def _get_cert_smtp(host, port):
     return c, dc
 
 
+def _get_field(s, d):
+    for t in d:
+        if t[0][0] == s:
+            return t[0][1]
+
+
 def _get_cert_data(c, dc):
-    def _get_field(s, d):
-        for t in d:
-            if t[0][0] == s:
-                return t[0][1]
+
     result = dict()
     result['from_d'] = datetime.strptime(c['notBefore'], "%b %d %H:%M:%S %Y %Z")
     result['to_d'] = datetime.strptime(c['notAfter'], "%b %d %H:%M:%S %Y %Z")
     result['cn'] = _get_field('commonName', c['subject'])
-    result['issuer'] = "%s, %s, %s" % (_get_field('commonName', c['issuer']), _get_field('organizationName', c['issuer']), _get_field('countryName', c['issuer']))
     result['an'] = ", ".join([x[1] for x in c['subjectAltName'] if x[0] == 'DNS'])
+    result['issuer'] = "%s, %s, %s" % (_get_field('commonName', c['issuer']), _get_field('organizationName', c['issuer']), _get_field('countryName', c['issuer']))
     result['sha256'] = hashlib.sha256(dc).hexdigest()
     result['sha512'] = hashlib.sha512(dc).hexdigest()
 
@@ -256,13 +262,18 @@ def _check_tlsa(cert, tlsa):
     return check
 
 
-def _make_https_result(host, port=443):
+def _make_result(host, port, type):
     result = dict()
     result['host'] = host
     result['port'] = port
     error = list()
     try:
-        c, dc = _get_cert(host, port)
+        if type == 'https':
+            c, dc = _get_cert(host, port)
+        elif type == smtp:
+            c, dc = _get_cert_smtp(host, port)
+        else:
+            raise Exception("Unknown type")
         cert = _get_cert_data(c, dc)
         result['cert'] = cert
         tlsa = _get_tlsa(host, port)
@@ -273,27 +284,96 @@ def _make_https_result(host, port=443):
 
     result['error'] = error
 
+    result['records'] = _make_tlsa_records(c, cert, port)
+
     return result
+
+
+def _make_tlsa_records(c, cert, port):
+    hosts = [x[1] for x in c['subjectAltName'] if x[0] == 'DNS']
+    cn = _get_field('commonName', c['subject'])
+    if cn not in hosts:
+        hosts.append(cn)
+
+    if not hosts:
+        return list()
+
+    host = hosts[1]  # TODO Multiple domains
+    if host.count('.') == 1:
+        domain = host
+    elif host.count('.') > 1:
+        domain = host[host.rfind('.', 0, host.rfind('.')) + 1:]
+    else:
+        return list()
+
+    z = dns.zone.BadZone()
+    z.origin = domain
+    records = list()
+    for h in hosts:
+        if h == domain:
+            host = ''
+        else:
+            host = '.' + h[:h.find(domain) - 1]
+
+        for u in (3,):  # usage
+            for s in (0, 1):  # selector
+                for t in (1, 2):
+                    if s == 0 and t == 1:
+                        d = cert['sha256']
+                    elif s == 0 and t == 2:
+                        d = cert['sha512']
+                    elif s == 1 and t == 1:
+                        d = cert['spki_sha256']
+                    elif s == 1 and t == 2:
+                        d = cert['spki_sha512']
+
+                    r = "_%s._tcp%s IN TLSA %s %s %s %s" % (port, host, u, s, t, d)
+                    print(r)
+                    records.append(r)
+
+    return records
+
+
+def _make_https_result(host, port=443):
+    return _make_result(host, port, 'https')
+    # result = dict()
+    # result['host'] = host
+    # result['port'] = port
+    # error = list()
+    # try:
+    #     c, dc = _get_cert(host, port)
+    #     cert = _get_cert_data(c, dc)
+    #     result['cert'] = cert
+    #     tlsa = _get_tlsa(host, port)
+    #     result['tlsa'] = tlsa
+    #     result['check'] = _check_tlsa(cert, tlsa)
+    # except (socket.error, TimeoutError, ssl.SSLError, ssl.CertificateError, dns.exception.DNSException) as e:
+    #     error.append(str(e))
+    #
+    # result['error'] = error
+    #
+    # return result
 
 
 def _make_smtp_result(host, port=25):
-    result = dict()
-    result['host'] = host
-    result['port'] = port
-    error = list()
-    try:
-        c, dc = _get_cert_smtp(host, port)
-        cert = _get_cert_data(c, dc)
-        result['cert'] = cert
-        tlsa = _get_tlsa(host, port)
-        result['tlsa'] = tlsa
-        result['check'] = _check_tlsa(cert, tlsa)
-    except (socket.error, TimeoutError, ssl.SSLError, ssl.CertificateError, dns.exception.DNSException) as e:
-        error.append(str(e))
-
-    result['error'] = error
-
-    return result
+    return _make_result(host, port, 'smtp')
+    # result = dict()
+    # result['host'] = host
+    # result['port'] = port
+    # error = list()
+    # try:
+    #     c, dc = _get_cert_smtp(host, port)
+    #     cert = _get_cert_data(c, dc)
+    #     result['cert'] = cert
+    #     tlsa = _get_tlsa(host, port)
+    #     result['tlsa'] = tlsa
+    #     result['check'] = _check_tlsa(cert, tlsa)
+    # except (socket.error, TimeoutError, ssl.SSLError, ssl.CertificateError, dns.exception.DNSException) as e:
+    #     error.append(str(e))
+    #
+    # result['error'] = error
+    #
+    # return result
 
 
 def _get_ssh_key(host, port=22):

@@ -2,4 +2,5 @@
 {% block title %}HTTPS{% endblock %}
 {% block result %}
 {{ util.print_cert(result) }}
+{{ util.print_tlsa_records(result.records) }}
 {% endblock %}
