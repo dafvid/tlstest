@@ -301,7 +301,7 @@ def _make_tlsa_records(c, cert, port):
     if not hosts:
         return list()
 
-    host = hosts[1]  # TODO Multiple domains
+    host = hosts[0]  # TODO Multiple domains
     if host.count('.') == 1:
         domain = host
     elif host.count('.') > 1:
