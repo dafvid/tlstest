@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block body %}
+<h1>SMIMEA</h1>
+<form method="POST">
+    {{ form.hidden_tag() }}
+    {{ util.rf(form.mail) }}
+    {{ util.rf(form.cert)}}
+    <input type="submit" value="OK">
+</form>
+{% if not is_none(result) %}
+<hr/>
+<ul>
+    {% for r in result.records %}
+        <li>{{ r }}</li>
+    {% endfor %}
+</ul>
+
+
+{% endif %}
+{% endblock %}
