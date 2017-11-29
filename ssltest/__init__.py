@@ -21,7 +21,7 @@ from flask_json import *
 from ssltest.forms import *
 import ssltest.util as util
 
-__version__ = '171129.1'
+__version__ = '171129.2'
 
 app = Flask(__name__)
 app.secret_key = "123456789"
