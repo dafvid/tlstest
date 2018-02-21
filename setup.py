@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='ssltest',
-      version='171129.3',
+      version='180221.1',
       url='http://www.dafnet.se',
       author='David Wahlund',
       author_email='david@dafnet.se',

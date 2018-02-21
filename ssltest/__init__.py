@@ -21,7 +21,7 @@ from flask_json import *
 from ssltest.forms import *
 import ssltest.util as util
 
-__version__ = '171129.3'
+__version__ = '180221.1'
 
 app = Flask(__name__)
 app.secret_key = "123456789"
@@ -427,13 +427,15 @@ def _make_smtp_result(host, port=25):
 
 def _get_ssh_key(host, port=22):
     key_d = dict()
+    keys = dict()
+    error = list()
     s1 = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s1.connect((host, port))
     t1 = pm.Transport(s1)
     so1 = t1.get_security_options()
 
     rsa_types = [x for x in so1.key_types if 'rsa' in x]
-    dsa_types = [x for x in so1.key_types if 'dsa' in x]
+    dsa_types = [x for x in so1.key_types if 'dss' in x]
     ecdsa_types = [x for x in so1.key_types if 'ecdsa' in x]
 
     t1.close()
@@ -469,20 +471,23 @@ def _get_ssh_key(host, port=22):
                 d['sha256'] = hashlib.sha256(key.asbytes()).hexdigest()
                 break
             except (Exception, ValueError, pm.SSHException, pm.ssh_exception.SSHException) as e:
-                d['error'] = str(e)
+                error.append("{}: {}".format(ty, str(e)))
             t2.close()
             s2.close()
         return d
 
     k = get_keys(rsa_types)
     if k:
-        key_d['rsa'] = k
+        keys['rsa'] = k
     k = get_keys(dsa_types)
     if k:
-        key_d['dsa'] = k
+        keys['dsa'] = k
     k = get_keys(ecdsa_types)
     if k:
-        key_d['ecdsa'] = k
+        keys['ecdsa'] = k
+    key_d['keys'] = keys
+    if error:
+        key_d['error'] = error
 
     return key_d
 
@@ -568,11 +573,14 @@ def _make_sshfp_result(host, port=22):
     error = list()
     records = list()
     try:
-        k = _get_ssh_key(host, port)
+        kd = _get_ssh_key(host, port)
+        k = kd['keys']
+        if kd['error']:
+            error.extend(kd['error'])
         result['key'] = k
         if h:
-            for i in k.values():
-                if 'error' not in i:
+            for n, i in k.items():
+                if n != 'error':
                     for j in (1, 2):
                         hash = i['sha1'] if j == 1 else i['sha256']
                         records.append("{} IN SSHFP {} {} {}".format(h, i['sshfp_type_code'], j, hash))
