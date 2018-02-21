@@ -67,47 +67,79 @@
     <h2>{{ r.host }}:{{ r.port }}</h2>
     {% if r.error %}
         <p>{{ r.error }}</p>
-    {% else %}
-    {% if r.check.error %}
-        <p>{{ r.check.error }}</p>
-    {% else %}
-    <ul>
-        <li><span class="code"><b>AD: </b><span class="{{ match_class(r.sshfp.ad) }}">{{ r.sshfp.ad }}</span></span></li>
-        {% if r.check.rsa %}
-        <li>
-            <h2>RSA</h2>
-            {{ print_check(r.check.rsa) }}
-        </li>
-        {% endif %}
-        {% if r.check.dsa %}
-        <li>
-            <h2>DSA</h2>
-            {{ print_check(r.check.dsa) }}
-        </li>
-        {% endif %}
-        {% if r.check.ecdsa %}
-        <li>
-            <h2>ECDSA</h2>
-            {{ print_check(r.check.ecdsa) }}
-        </li>
-        {% endif %}
-    </ul>
-
-    <table>
-        <tr>
-            <th>Type</th>
-            <th>FP type</th>
-            <th>Fingerprint</th>
-        </tr>
-        {% for i in r.sshfp.rrd %}
-            <tr>
-                <td> {{ i.algorithm_type }} ({{ i.algorithm_code }})</td>
-                <td> {{ i.fingerprint_type }} ({{ i.fingerprint_code }})</td>
-                <td> {{ i.fingerprint }}</td>
-            </tr>
-        {% endfor %}
-    </table>
     {% endif %}
+
+    {% if r.key %}
+        <h3>Key fingerprints</h3>
+        <table>
+            <tr>
+                <th>Type</th>
+                <th>Hash</th>
+                <th>Fingerprint</th>
+            </tr>
+            {% for k, v in r.key.items() %}
+                <tr>
+                    <td>{{ k.upper() }}</td><td>SHA-1</td><td> {{ v.sha1 }}</td>
+                </tr>
+                <tr>
+                    <td>{{ k.upper() }}</td><td>SHA-256</td><td> {{ v.sha256 }}</td>
+                </tr>
+            {% endfor %}
+        </table>
+    {% endif %}
+    {% if r.sshfp %}
+        {% if r.check %}
+            {% if r.check.error %}
+                <p>{{ r.check.error }}</p>
+            {% else %}
+                <ul>
+                    <li><span class="code"><b>AD: </b><span class="{{ match_class(r.sshfp.ad) }}">{{ r.sshfp.ad }}</span></span></li>
+                    {% if r.check.rsa %}
+                    <li>
+                        <h2>RSA</h2>
+                        {{ print_check(r.check.rsa) }}
+                    </li>
+                    {% endif %}
+                    {% if r.check.dsa %}
+                    <li>
+                        <h2>DSA</h2>
+                        {{ print_check(r.check.dsa) }}
+                    </li>
+                    {% endif %}
+                    {% if r.check.ecdsa %}
+                    <li>
+                        <h2>ECDSA</h2>
+                        {{ print_check(r.check.ecdsa) }}
+                    </li>
+                    {% endif %}
+                </ul>
+
+                <h3>SSH-records on server</h3>
+                <table>
+                    <tr>
+                        <th>Type</th>
+                        <th>FP type</th>
+                        <th>Fingerprint</th>
+                    </tr>
+                    {% for i in r.sshfp.rrd %}
+                        <tr>
+                            <td> {{ i.algorithm_type }} ({{ i.algorithm_code }})</td>
+                            <td> {{ i.fingerprint_type }} ({{ i.fingerprint_code }})</td>
+                            <td> {{ i.fingerprint }}</td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            {% endif %}
+        {% endif %}
+    {% endif %}
+    {% if r.records %}
+        <hr/>
+        SSHFP-records
+        <ul>
+            {% for r in r.records -%}
+                <li>{{ r }}</li>
+            {% endfor %}
+            </ul>
     {% endif %}
 {% endmacro %}
 

@@ -156,7 +156,7 @@ def smimea():
             format=serialization.PublicFormat.SubjectPublicKeyInfo
         )
         name = hashlib.sha256(mail[0].encode('UTF-8')).hexdigest()
-        rq = "%s._smimecert.%s." % (name[:56], mail[1])
+        rq = "%s._smimecert.%s. IN TYPE53" % (name[:56], mail[1])
         recs = list()
         u = 3
         for s in (0, 1):
@@ -348,9 +348,6 @@ def _make_tlsa_records(c, cert, port):
     if not hosts:
         return list()
 
-    if not hosts:
-        return list()
-
     host = hosts[0]  # TODO Multiple domains
     if host.count('.') == 1:
         domain = host
@@ -436,7 +433,7 @@ def _get_ssh_key(host, port=22):
     so1 = t1.get_security_options()
 
     rsa_types = [x for x in so1.key_types if 'rsa' in x]
-    dsa_types = [x for x in so1.key_types if 'dss' in x]
+    dsa_types = [x for x in so1.key_types if 'dsa' in x]
     ecdsa_types = [x for x in so1.key_types if 'ecdsa' in x]
 
     t1.close()
@@ -535,9 +532,8 @@ def _check_sshfp(key, sshfp):
 
     fp_found = False
     key_types = {1: 'rsa', 2: 'dsa', 3: 'ecdsa', 4: 'ed25519'}
+
     for i in sshfp['rrd']:
-        if 'error' in i:
-            continue
         type_code = i['algorithm_code']
         if type_code in key_types:
             key_type = key_types[type_code]
@@ -556,7 +552,6 @@ def _check_sshfp(key, sshfp):
                         d[key_type]['key_sha256'] = k['sha256']
                         d[key_type]['sha256_match'] = eq_yn(k['sha256'], i['fingerprint'])
 
-
     if not fp_found:
         return {'error': 'FINGERPRINT_NOT_FOUND'}
 
@@ -566,14 +561,28 @@ def _check_sshfp(key, sshfp):
 def _make_sshfp_result(host, port=22):
     result = dict()
     result['host'] = host
+    h = ''
+    if host.count('.') == 2:
+        h = host[:host.find('.')]
     result['port'] = port
     error = list()
+    records = list()
     try:
         k = _get_ssh_key(host, port)
         result['key'] = k
+        if h:
+            for i in k.values():
+                if 'error' not in i:
+                    for j in (1, 2):
+                        hash = i['sha1'] if j == 1 else i['sha256']
+                        records.append("{} IN SSHFP {} {} {}".format(h, i['sshfp_type_code'], j, hash))
+            result['records'] = records
         sshfp = _get_sshfp(host)
-        result['sshfp'] = sshfp
-        result['check'] = _check_sshfp(k, sshfp)
+        if 'error' in sshfp:
+            error.append(sshfp['error'])
+        else:
+            result['sshfp'] = sshfp
+            result['check'] = _check_sshfp(k, sshfp)
     except (TimeoutError, dns.exception.DNSException) as e:
         error.append(str(e))
 

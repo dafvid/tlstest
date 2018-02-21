@@ -27,6 +27,6 @@ if __name__ == '__main__':
     # app.config['TEMPLATES_AUTO_RELOAD'] = True
     # app.config['DEBUG'] = True
     # app.run(host='0.0.0.0', port=8081, use_evalex=False, request_handler=ScriptNameHandler)
-    app.run(host='0.0.0.0', port=81, use_evalex=False, debug=True)
+    app.run(host='0.0.0.0', port=80, use_evalex=False, debug=True)
     # rapp = ReverseProxied(app)
     # rapp.app.run(host='0.0.0.0', port=8081)
