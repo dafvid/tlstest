@@ -1,6 +1,5 @@
-from werkzeug.serving import WSGIRequestHandler
-
 from tlstest.webapp import app
+from werkzeug.serving import WSGIRequestHandler
 
 
 class ScriptNameHandler(WSGIRequestHandler):
