@@ -1,0 +1,37 @@
+image: python:3.6
+
+
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+
+cache:
+  paths:
+    - .cache/pip
+    #- test_venv/
+
+before_script:
+  - python -V
+  #- python -m venv test_venv
+  #- source test_venv/bin/activate
+  #- pip install -r requirements.txt
+
+lint:
+  tags: 
+  - docker
+  script:
+    - pip install pep8-naming flake8-builtins flake8-import-order
+    - python -m flake8 *.py
+
+install:
+  tags: 
+  - docker
+  script:
+    - python setup.py bdist_wheel
+    - pip install dist/*
+  artifacts:
+    paths:
+    - dist/
+    expire_in: 1 week
+
+
+
