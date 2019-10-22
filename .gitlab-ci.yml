@@ -20,7 +20,7 @@ lint:
   - docker
   script:
     - pip install pep8-naming flake8-builtins flake8-import-order
-    - python -m flake8 *.py
+    - python -m flake8 --import-order-style pycharm *.py
 
 install:
   tags: 
