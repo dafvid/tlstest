@@ -1,5 +1,6 @@
-from ssltest import app
 from werkzeug.serving import WSGIRequestHandler
+
+from tlstest.webapp import app
 
 
 class ScriptNameHandler(WSGIRequestHandler):
@@ -22,11 +23,12 @@ class ScriptNameHandler(WSGIRequestHandler):
         print('PATH_INFO:', environ['PATH_INFO'])
         return environ
 
-if __name__ == '__main__':
-    app.config['PROPAGATE_EXCEPTIONS'] = True
-    # app.config['TEMPLATES_AUTO_RELOAD'] = True
-    # app.config['DEBUG'] = True
-    # app.run(host='0.0.0.0', port=8081, use_evalex=False, request_handler=ScriptNameHandler)
-    app.run(host='0.0.0.0', port=80, use_evalex=False, debug=True)
-    # rapp = ReverseProxied(app)
-    # rapp.app.run(host='0.0.0.0', port=8081)
+
+app.config['PROPAGATE_EXCEPTIONS'] = True
+# app.config['TEMPLATES_AUTO_RELOAD'] = True
+# app.config['DEBUG'] = True
+# app.run(host='0.0.0.0', port=8081, use_evalex=False,
+# request_handler=ScriptNameHandler)
+app.run(host='0.0.0.0', port=81, use_evalex=False, debug=True)
+# rapp = ReverseProxied(app)
+# rapp.app.run(host='0.0.0.0', port=8081)

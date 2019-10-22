@@ -1,10 +1,10 @@
 import pprint
-from threading import Thread, Event
-import io
-import time
-import select
-import socket
-import errno
+# from threading import Thread, Event
+# import io
+# import time
+# import select
+# import socket
+# import errno
 
 def pp(o):
     pp = pprint.PrettyPrinter()

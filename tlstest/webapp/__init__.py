@@ -18,8 +18,8 @@ import dns.rdtypes
 import paramiko as pm
 from flask import *
 from flask_json import *
-from ssltest.forms import *
-import ssltest.util as util
+from tlstest.webapp.forms import *
+import tlstest.util as util
 
 __version__ = '180221.1'
 

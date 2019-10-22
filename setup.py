@@ -1,12 +1,13 @@
 from setuptools import setup
 
-setup(name='ssltest',
-      version='180221.1',
+setup(name='tlstest',
+      version='191022.1',
       url='http://www.dafnet.se',
       author='David Wahlund',
       author_email='david@dafnet.se',
-      packages=['ssltest'],
+      packages=['tlstest'],
       include_package_data=True,
       zip_safe=False,
-      install_requires=['flask', 'flask_json', 'flask_wtf', 'paramiko', 'dnspython', 'PyOpenSSL']
+      install_requires=['flask', 'flask_json', 'flask_wtf', 'paramiko',
+                        'dnspython', 'PyOpenSSL']
       )
