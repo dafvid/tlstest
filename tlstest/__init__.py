@@ -6,8 +6,11 @@ from datetime import datetime
 from smtplib import SMTP
 
 import OpenSSL
-import dns
+import dns.resolver
+import dns.zone
 import paramiko as pm
+from cryptography import x509
+from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 
 from .util import eq_yn, yn
@@ -220,24 +223,6 @@ def _make_tlsa_records(c, cert, port):
 
 def make_https_result(host, port=443):
     return _make_result(host, port, 'https')
-    # result = dict()
-    # result['host'] = host
-    # result['port'] = port
-    # error = list()
-    # try:
-    #     c, dc = _get_cert(host, port)
-    #     cert = _get_cert_data(c, dc)
-    #     result['cert'] = cert
-    #     tlsa = _get_tlsa(host, port)
-    #     result['tlsa'] = tlsa
-    #     result['check'] = _check_tlsa(cert, tlsa)
-    # except (socket.error, TimeoutError, ssl.SSLError, ssl.CertificateError,
-    #  dns.exception.DNSException) as e:
-    #     error.append(str(e))
-    #
-    # result['error'] = error
-    #
-    # return result
 
 
 def make_smtp_result(host, port=25):
@@ -441,3 +426,43 @@ def make_sshfp_result(host, port=22):
         result['error'] = error
 
     return result
+
+
+def make_smimea(mail, cert):
+    mail = mail.split('@')
+    if len(mail) != 2:
+        raise Exception('mail must have format <user>@<host>')
+    cert = cert.encode('utf-8')
+    c = x509.load_pem_x509_certificate(cert, default_backend())
+    b = c.public_bytes(encoding=serialization.Encoding.DER)
+    spki = c.public_key().public_bytes(
+        encoding=serialization.Encoding.DER,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo
+    )
+    name = hashlib.sha256(mail[0].encode('UTF-8')).hexdigest()
+    rq = "%s._smimecert.%s. IN TYPE53" % (name[:56], mail[1])
+    recs = list()
+    u = 3
+    for s in (0, 1):
+        for t in (0, 1, 2):
+            if s == 0:
+                d = b
+            elif s == 1:
+                d = spki
+            else:
+                raise Exception("Selector error [{}]".format(s))
+
+            if t == 0:
+                h = binascii.hexlify(b).decode('UTF-8')
+            elif t == 1:
+                h = hashlib.sha256(d).hexdigest()
+            elif t == 2:
+                h = hashlib.sha512(d).hexdigest()
+            else:
+                raise Exception("Type error [{}]".format(t))
+
+            rec = "%s %d %d %d %s" % (rq, u, s, t, h)
+            if s == 1 and t == 0:
+                continue
+            recs.append(rec)
+    return recs

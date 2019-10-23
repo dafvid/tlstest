@@ -1,15 +1,9 @@
-import binascii
-import hashlib
-
-from cryptography import x509
-from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import serialization
 from flask import Flask, render_template, request
 from flask_json import FlaskJSON, as_json
 
 from .forms import HostForm, SmimeaForm
-from .. import make_https_result, make_smtp_result, make_sshfp_result
-
+from .. import make_https_result, make_smimea, make_smtp_result, \
+    make_sshfp_result
 
 __version__ = '180221.1'
 
@@ -134,45 +128,7 @@ def smimea():
     form = SmimeaForm()
     r = None
     if form.validate_on_submit():
-        r = dict()
-        mail = form.mail.data.split('@')
-        if len(mail) != 2:
-            raise Exception('DATABRAK')
-        cert = form.cert.data.encode('UTF-8')
-        c = x509.load_pem_x509_certificate(cert, default_backend())
-        b = c.public_bytes(encoding=serialization.Encoding.DER)
-        spki = c.public_key().public_bytes(
-            encoding=serialization.Encoding.DER,
-            format=serialization.PublicFormat.SubjectPublicKeyInfo
-        )
-        name = hashlib.sha256(mail[0].encode('UTF-8')).hexdigest()
-        rq = "%s._smimecert.%s. IN TYPE53" % (name[:56], mail[1])
-        recs = list()
-        u = 3
-        for s in (0, 1):
-            for t in (0, 1, 2):
-                if s == 0:
-                    d = b
-                elif s == 1:
-                    d = spki
-                else:
-                    raise Exception("Selector error")
-
-                if t == 0:
-                    h = binascii.hexlify(b).decode('UTF-8')
-                elif t == 1:
-                    h = hashlib.sha256(d).hexdigest()
-                elif t == 2:
-                    h = hashlib.sha512(d).hexdigest()
-                else:
-                    raise Exception("Type error")
-
-                rec = "%s %d %d %d %s" % (rq, u, s, t, h)
-                if s == 1 and t == 0:
-                    continue
-                recs.append(rec)
-
-        r['records'] = recs
+        r = {'records': make_smimea(form.mail.data, form.cert.data)}
 
     return render_template('smimea.html', form=form, result=r)
 
