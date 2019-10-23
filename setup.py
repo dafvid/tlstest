@@ -8,6 +8,6 @@ setup(name='tlstest',
       packages=['tlstest'],
       include_package_data=True,
       zip_safe=False,
-      install_requires=['flask', 'flask_json', 'flask_wtf', 'paramiko',
-                        'dnspython', 'PyOpenSSL']
+      install_requires=['cryptography', 'flask', 'flask_json', 'flask_wtf',
+                        'paramiko', 'dnspython', 'PyOpenSSL']
       )

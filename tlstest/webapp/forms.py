@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, IntegerField, validators, TextAreaField
+from wtforms import IntegerField, StringField, TextAreaField, validators
 
 
 class SmimeaForm(FlaskForm):
