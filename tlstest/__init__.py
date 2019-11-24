@@ -15,7 +15,7 @@ from cryptography.hazmat.primitives import serialization
 
 from .util import eq_yn, yn
 
-__version__ = '191022.1'
+__version__ = '191124.1'
 
 
 def _get_resolver():

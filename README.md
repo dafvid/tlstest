@@ -23,4 +23,8 @@ _email_ email: email (user@example.com)
 
 _cert_ path: path to cert file
 
-_file_ filename: file with space separated format _test_ _host_ [_port_] [_mail_] [_cert_]
+_file_ filename: file with space separated format _test_ _host_ \[_port_\] \[_mail_\] \[_cert_\]
+
+# TODO
+
+- IMAP test 
