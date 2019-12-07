@@ -1,2 +1,2 @@
-recursive-include ssltest/templates *
-recursive-include ssltest/static *
+recursive-include tlstest/webapp/templates *
+recursive-include tlstest/webapp/static *
