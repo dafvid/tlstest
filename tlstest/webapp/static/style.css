@@ -76,3 +76,9 @@ td{
     padding-bottom: 2px;
     white-space: nowrap;
 }
+
+textarea.cert {
+    width: 485px;
+    height: 465px;
+    overflow: hidden;
+}

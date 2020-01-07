@@ -2,13 +2,16 @@ import binascii
 import hashlib
 import socket
 import ssl
+import struct
 from datetime import datetime
+from pprint import pprint
 from smtplib import SMTP
 
 import OpenSSL
 import dns.resolver
 import dns.zone
 import paramiko as pm
+from dns.exception import DNSException
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
@@ -439,12 +442,12 @@ def make_smimea(mail, cert):
         encoding=serialization.Encoding.DER,
         format=serialization.PublicFormat.SubjectPublicKeyInfo
     )
-    name = hashlib.sha256(mail[0].encode('UTF-8')).hexdigest()
-    rq = "%s._smimecert.%s. IN TYPE53" % (name[:56], mail[1])
+    name = hashlib.sha256(mail[0].encode('UTF-8')).hexdigest()[:56]
+    rq = "%s._smimecert.%s. IN TYPE53" % (name, mail[1])
     recs = list()
-    u = 3
-    for s in (0, 1):
-        for t in (0, 1, 2):
+    u = 3  # Usage certificate
+    for s in (0, 1):  # Selector 0=Certificate 1=SPKI
+        for t in (0, 1, 2):  # Type 0=Full 1=SHA256 2=SHA512
             if s == 0:
                 d = b
             elif s == 1:
@@ -466,3 +469,40 @@ def make_smimea(mail, cert):
                 continue
             recs.append(rec)
     return recs
+
+
+def make_ds(host, port=53):
+    pass
+
+
+def make_fetch_smimea(mail):
+    nd = {
+        'selector': {0: 'cert', 1: 'spki'},
+        'type': {0: 'full', 1: 'sha256', 2: 'sha512'}
+    }
+    reply = {
+        'cert': {'sha256': None, 'sha512': None},
+        'spki': {'sha256': None, 'sha512': None},
+    }
+    mail = mail.split('@')
+    local = mail[0]
+    host = mail[1]
+    name = hashlib.sha256(local.encode('UTF-8')).hexdigest()[:56]
+    q = '{}._smimecert.{}'.format(name, host)
+    reply['query'] = q
+    try:
+        a = _get_resolver().query(q, 'TYPE53')
+    except DNSException as e:
+        raise util.TLSTestException(e)
+    reply['ad'] = yn('AD' in dns.flags.to_text(a.response.flags))
+    for r in a:
+        usage, selector, _type = struct.unpack('!BBB', r.data[0:3])
+        data = r.data[3:].unwrap()
+        assert usage == 3
+        if selector == 0 and _type == 0:
+            data = x509.load_der_x509_certificate(data, default_backend()).public_bytes(serialization.Encoding.PEM).decode()
+        else:
+            data = binascii.hexlify(data).decode()
+        reply[nd['selector'][selector]][nd['type'][_type]] = data
+
+    return reply

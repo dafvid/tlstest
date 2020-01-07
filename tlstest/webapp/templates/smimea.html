@@ -2,20 +2,47 @@
 
 {% block body %}
 <h1>SMIMEA</h1>
+<h2>Create SMIMEA</h2>
 <form method="POST">
     {{ form.hidden_tag() }}
     {{ util.rf(form.mail) }}
     {{ util.rf(form.cert)}}
     <input type="submit" value="OK">
 </form>
+
+<h2>Fetch SMIMEA</h2>
+<form action="{{ url_for('fetch_smimea') }}" method="POST">
+    {{ fetch_form.hidden_tag() }}
+    {{ util.rf(fetch_form.mail) }}
+    <input type="submit" value="OK">
+</form>
+
 {% if not is_none(result) %}
 <hr/>
+{% if result.error %}
+<b>{{ result.error }}</b>
+{% else %}
+
+{% if result.type == 'make' %}
 <ul>
     {% for r in result.records %}
         <li>{{ r }}</li>
     {% endfor %}
 </ul>
+{% else %}
 
-
+<ul>
+    <li><b>AD:</b> {{ result.data.ad }}</li>
+    <li><b>Cert SHA256:</b> <small>{{ result.data.cert.sha256 }}</small></li>
+    <li><b>Cert SHA512:</b> <small>{{ result.data.cert.sha512 }}</small></li>
+    <li><b>SPKI SHA256:</b> <small>{{ result.data.spki.sha256 }}</small></li>
+    <li><b>SPKI SHA512:</b> <small>{{ result.data.spki.sha512 }}</small></li>
+    <li>drill -D {{ result.data.query }} SMIMEA</li>
+    <li>
+        <textarea class="cert">{{ result.data.cert.full }}</textarea>
+    </li>
+</ul>
+{% endif %}
+{% endif %}
 {% endif %}
 {% endblock %}

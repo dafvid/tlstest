@@ -1,6 +1,10 @@
 import sys
 
 
+class TLSTestException(Exception):
+    pass
+
+
 def print_if(a, b):
     if a:
         return a

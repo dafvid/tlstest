@@ -1,9 +1,9 @@
 from flask import Flask, render_template, request
 from flask_json import FlaskJSON, as_json
 
-from .forms import HostForm, SmimeaForm
+from .forms import HostForm, SmimeaForm, FetchSmimeaForm
 from .. import make_https_result, make_smimea, make_smtp_result, \
-    make_sshfp_result
+    make_sshfp_result, make_fetch_smimea, util
 
 __version__ = '180221.1'
 
@@ -126,11 +126,37 @@ def sshfp():
 @app.route('/smimea', methods=['GET', 'POST'])
 def smimea():
     form = SmimeaForm()
+    fetch_form = FetchSmimeaForm(prefix='fetch_')
     r = None
     if form.validate_on_submit():
-        r = {'records': make_smimea(form.mail.data, form.cert.data)}
+        r = {'type': 'make', 'result': make_smimea(form.mail.data, form.cert.data)}
 
-    return render_template('smimea.html', form=form, result=r)
+    return render_template(
+        'smimea.html',
+        form=form,
+        fetch_form=fetch_form,
+        result=r)
+
+
+@app.route('/fetch_smimea', methods=['POST'])
+def fetch_smimea():
+    form = SmimeaForm()
+    fetch_form = FetchSmimeaForm(prefix='fetch_')
+    r = None
+    if fetch_form.validate_on_submit():
+        r = {'type': 'fetch'}
+        mail = fetch_form.mail.data
+
+        try:
+            r['data'] = make_fetch_smimea(mail)
+        except util.TLSTestException as e:
+            r['error'] = str(e)
+
+    return render_template(
+        'smimea.html',
+        form=form,
+        fetch_form=fetch_form,
+        result=r)
 
 
 @app.template_global()

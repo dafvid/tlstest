@@ -7,6 +7,10 @@ class SmimeaForm(FlaskForm):
     cert = TextAreaField('Certificate', [validators.required()])
 
 
+class FetchSmimeaForm(FlaskForm):
+    mail = StringField('E-mail', [validators.required(), validators.Email()])
+
+
 class HostForm(FlaskForm):
     host = StringField('Host', [validators.required()])
     port = IntegerField('Port', [validators.required()])
