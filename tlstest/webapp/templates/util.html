@@ -21,7 +21,7 @@
             <li><span class="label">Från: </span> {{  c.cert.from_d|df }}</li>
             <li><span class="label">Till: </span> {{ c.cert.to_d|df }}</li>
             <li><span class="label">CN: </span> {{ c.cert.cn }}</li>
-            <li><span class="label">AN: </span> {{ c.cert.an }}</li>
+            <li><span class="label">AN: </span> {{ ', '.join(c.cert.an) }}</li>
 
         </ul>
         <hr/>

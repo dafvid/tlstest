@@ -1,5 +1,6 @@
 import binascii
 import hashlib
+import os
 import socket
 import ssl
 import struct
@@ -7,7 +8,6 @@ from datetime import datetime
 from pprint import pprint
 from smtplib import SMTP
 
-import OpenSSL
 import dns.resolver
 import dns.zone
 import paramiko as pm
@@ -15,6 +15,7 @@ from dns.exception import DNSException
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
+from cryptography.x509.oid import NameOID, ExtensionOID
 
 from .util import eq_yn, yn
 
@@ -42,10 +43,12 @@ def _get_cert(host, port):
     # ssl_context.check_hostname = True
     ssl_sock = ssl_context.wrap_socket(s, server_hostname=host)
     ssl_sock.connect((host, port))
-    c = ssl_sock.getpeercert()
+    # c = ssl_sock.getpeercert()
     dc = ssl_sock.getpeercert(binary_form=True)
     ssl_sock.close()
-    return c, dc
+    c = x509.load_der_x509_certificate(dc, default_backend())
+
+    return c
 
 
 def _get_cert_smtp(host, port):
@@ -55,10 +58,18 @@ def _get_cert_smtp(host, port):
         client.ehlo_or_helo_if_needed()
         ssl_context = _get_context(False)
         client.starttls(context=ssl_context)
-        c = client.sock.getpeercert()
+        # c = client.sock.getpeercert()
         dc = client.sock.getpeercert(binary_form=True)
+        c = x509.load_der_x509_certificate(dc, default_backend())
 
-    return c, dc
+    return c
+
+
+def _get_cert_file(path):
+    with open(path) as f:
+        data = f.read()
+        c = x509.load_pem_x509_certificate(data.encode(), default_backend())
+        return c
 
 
 def _get_field(s, d):
@@ -67,30 +78,30 @@ def _get_field(s, d):
             return t[0][1]
 
 
-def _get_cert_data(c, dc):
+def _get_cert_data(c):
     result = dict()
-    result['from_d'] = datetime.strptime(c['notBefore'],
-                                         "%b %d %H:%M:%S %Y %Z")
-    result['to_d'] = datetime.strptime(c['notAfter'], "%b %d %H:%M:%S %Y %Z")
-    result['cn'] = _get_field('commonName', c['subject'])
-    result['an'] = ", ".join(
-        [x[1] for x in c['subjectAltName'] if x[0] == 'DNS'])
-    result['issuer'] = "%s, %s, %s" % (_get_field('commonName', c['issuer']),
-                                       _get_field('organizationName',
-                                                  c['issuer']),
-                                       _get_field('countryName', c['issuer']))
-    result['sha256'] = hashlib.sha256(dc).hexdigest()
-    result['sha512'] = hashlib.sha512(dc).hexdigest()
+    result['from_d'] = c.not_valid_before
+    result['to_d'] = c.not_valid_after
+    result['cn'] = c.subject.get_attributes_for_oid(NameOID.COMMON_NAME)[0].value
+    ext = c.extensions.get_extension_for_oid(
+        ExtensionOID.SUBJECT_ALTERNATIVE_NAME)
+    result['an'] = ext.value.get_values_for_type(x509.DNSName)
+    result['issuer'] = "{}, {}, {}".format(
+        c.issuer.get_attributes_for_oid(NameOID.COMMON_NAME)[0].value,
+        c.issuer.get_attributes_for_oid(NameOID.ORGANIZATION_NAME)[0].value,
+        c.issuer.get_attributes_for_oid(NameOID.COUNTRY_NAME)[0].value
+    )
+    cder = c.public_bytes(serialization.Encoding.DER)
+    result['sha256'] = hashlib.sha256(cder).hexdigest()
+    result['sha512'] = hashlib.sha512(cder).hexdigest()
 
-    oc = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_ASN1, dc)
-    pk = oc.get_pubkey().to_cryptography_key()
-    pkb = pk.public_bytes(
+    pkb = c.public_key().public_bytes(
         encoding=serialization.Encoding.DER,
         format=serialization.PublicFormat.SubjectPublicKeyInfo
     )
-
     result['spki_sha256'] = hashlib.sha256(pkb).hexdigest()
     result['spki_sha512'] = hashlib.sha512(pkb).hexdigest()
+
     return result
 
 
@@ -152,36 +163,41 @@ def _check_tlsa(cert, tlsa):
     return check
 
 
-def _make_result(host, port, result_type):
+def _make_result(result_type, do_query=True, host=None, port=None, file=None):
     result = dict()
-    result['host'] = host
-    result['port'] = port
     error = list()
+    result['port'] = port
     try:
         if result_type == 'https':
-            c, dc = _get_cert(host, port)
+            result['host'] = host
+            c = _get_cert(host, port)
         elif result_type == 'smtp':
-            c, dc = _get_cert_smtp(host, port)
+            result['host'] = host
+            c = _get_cert_smtp(host, port)
+        elif result_type == 'file':
+            result['host'] = '<file>'
+            c = _get_cert_file(file)
         else:
             raise Exception("Unknown type")
-        cert = _get_cert_data(c, dc)
+        cert = _get_cert_data(c)
         result['cert'] = cert
-        tlsa = _get_tlsa(host, port)
-        result['tlsa'] = tlsa
-        result['check'] = _check_tlsa(cert, tlsa)
-        result['records'] = _make_tlsa_records(c, cert, port)
+        if do_query:
+            tlsa = _get_tlsa(host, port)
+            result['tlsa'] = tlsa
+            result['check'] = _check_tlsa(cert, tlsa)
+        result['records'] = _make_tlsa_records(cert, port)
     except (socket.error, TimeoutError, ssl.SSLError, ssl.CertificateError,
             dns.exception.DNSException) as e:
-        error.append(str(e))
+        error.append("{}:{} {}".format(host, port, e))
 
     result['error'] = error
 
     return result
 
 
-def _make_tlsa_records(c, cert, port):
-    hosts = [x[1] for x in c['subjectAltName'] if x[0] == 'DNS']
-    cn = _get_field('commonName', c['subject'])
+def _make_tlsa_records(cert, port):
+    hosts = [x for x in cert['an']]
+    cn = cert['cn']
     if cn not in hosts:
         hosts.append(cn)
 
@@ -224,30 +240,16 @@ def _make_tlsa_records(c, cert, port):
     return records
 
 
-def make_https_result(host, port=443):
-    return _make_result(host, port, 'https')
+def make_https_result(host, port=443, do_query=True):
+    return _make_result('https', host=host, port=port, do_query=do_query)
 
 
-def make_smtp_result(host, port=25):
-    return _make_result(host, port, 'smtp')
-    # result = dict()
-    # result['host'] = host
-    # result['port'] = port
-    # error = list()
-    # try:
-    #     c, dc = _get_cert_smtp(host, port)
-    #     cert = _get_cert_data(c, dc)
-    #     result['cert'] = cert
-    #     tlsa = _get_tlsa(host, port)
-    #     result['tlsa'] = tlsa
-    #     result['check'] = _check_tlsa(cert, tlsa)
-    # except (socket.error, TimeoutError, ssl.SSLError,
-    # ssl.CertificateError, dns.exception.DNSException) as e:
-    #     error.append(str(e))
-    #
-    # result['error'] = error
-    #
-    # return result
+def make_smtp_result(host, port=25, do_query=True):
+    return _make_result('smtp', host=host, port=port, do_query=do_query)
+
+
+def make_file_result(file, port, do_query=True):
+    return _make_result('file', port=port, file=file, do_query=do_query)
 
 
 def _get_ssh_key(host, port=22):
