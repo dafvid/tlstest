@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='tlstest',
-      version='200107.1',
+      version='200606.1',
       url='http://www.dafnet.se',
       author='David Wahlund',
       author_email='david@dafnet.se',

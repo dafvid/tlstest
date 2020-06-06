@@ -19,7 +19,7 @@ from cryptography.x509.oid import NameOID, ExtensionOID
 
 from .util import eq_yn, yn
 
-__version__ = '200107.1'
+__version__ = '200606.1'
 
 
 def _get_resolver():
