@@ -3,4 +3,5 @@ run.bat
 build/*
 dist/*
 ssltest.egg-info/*
+tlstest.egg-info/*
 *.pem
