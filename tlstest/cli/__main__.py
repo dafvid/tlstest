@@ -27,16 +27,17 @@ def _print_result(r, r_type):
         for e in r['error']:
             print(e)
     else:
-        if not flargs['cron'] and not flargs['tlsa']:
+        if not flargs['cron']:
             print()
             print("[ {}: {} ]".format(r['host'], r['port']))
-            print()
-            print("ISSUER: {}".format(r['cert']['issuer']))
-            print("CN: {}".format(r['cert']['cn']))
-            print("AN: {}".format(', '.join(r['cert']['an'])))
-            print("FROM: {}".format(r['cert']['from_d']))
-            print("TO: {}".format(r['cert']['to_d']))
-            print()
+            if not flargs['tlsa']:
+                print()
+                print("ISSUER: {}".format(r['cert']['issuer']))
+                print("CN: {}".format(r['cert']['cn']))
+                print("AN: {}".format(', '.join(r['cert']['an'])))
+                print("FROM: {}".format(r['cert']['from_d']))
+                print("TO: {}".format(r['cert']['to_d']))
+                print()
 
         if 'check' in r and not flargs['tlsa']:
             for k, v in r['check'].items():
@@ -75,20 +76,13 @@ def _sshfp(host, port):
     if not port:
         port = 22
     r = make_sshfp_result(host, port)
-    pprint(r)
-    print()
+
     if r['error']:
         for e in r['error']:
             print(e)
-    if not flargs['cron'] and not flargs['tlsa']:
+    if not flargs['cron']:
+        print()
         print("[ SSH {}: {} ]".format(host, port))
-        print()
-        print("ISSUER: {}".format(r['cert']['issuer']))
-        print("CN: {}".format(r['cert']['cn']))
-        print("AN: {}".format(r['cert']['an']))
-        print("FROM: {}".format(r['cert']['from_d']))
-        print("TO: {}".format(r['cert']['to_d']))
-        print()
 
     if not flargs['tlsa']:
         for k, v in r['check'].items():
@@ -150,5 +144,7 @@ else:
         assert args['port']
         port = int(args['port'])
         _file(args['certfile'], port)
+    if flargs['zone']:
+        assert args['zonedir']
     else:
         print('https/smtp/sshfp/cron port <port> host <host>|certfile <certfile>')
