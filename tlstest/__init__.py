@@ -22,6 +22,7 @@ from .util import eq_yn, yn
 __version__ = '200606.1'
 
 
+# Returns the DNS resolver
 def _get_resolver():
     r = dns.resolver.Resolver()
     # r.nameservers = ['8.8.8.8']
@@ -29,6 +30,7 @@ def _get_resolver():
     return r
 
 
+# Returns the ssl context
 def _get_context(check_hostname=False):
     c = ssl.create_default_context()
     c.check_hostname = check_hostname
@@ -37,6 +39,7 @@ def _get_context(check_hostname=False):
     return c
 
 
+# Fetches a cert from a HTTP-server
 def _get_cert(host, port):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     ssl_context = _get_context(True)
@@ -51,6 +54,7 @@ def _get_cert(host, port):
     return c
 
 
+# Fetches a cert from a STMP-server
 def _get_cert_smtp(host, port):
     # print("Fetch SMTP cert for %s:%s" % (host, port))
     with SMTP(host, port) as client:
@@ -65,6 +69,7 @@ def _get_cert_smtp(host, port):
     return c
 
 
+# Loads a cert from file
 def _get_cert_file(path):
     with open(path) as f:
         data = f.read()
@@ -72,12 +77,14 @@ def _get_cert_file(path):
         return c
 
 
+# Fetches a named field and value from the cert
 def _get_field(s, d):
     for t in d:
         if t[0][0] == s:
             return t[0][1]
 
 
+# Extracts cert data into a data dict
 def _get_cert_data(c):
     result = dict()
     result['from_d'] = c.not_valid_before
@@ -105,6 +112,7 @@ def _get_cert_data(c):
     return result
 
 
+# Queries the resolver for the TLSA-records for the domain
 def _get_tlsa(host, port):
     tlsa = dict()
     error = list()
@@ -150,6 +158,7 @@ def _get_tlsa(host, port):
     return tlsa
 
 
+# Compares the resolved TLSA-records with the calculated ones
 def _check_tlsa(cert, tlsa):
     check = dict()
     check['match_sha256'] = yn(
@@ -163,7 +172,8 @@ def _check_tlsa(cert, tlsa):
     return check
 
 
-def _make_result(result_type, do_query=True, host=None, port=None, file=None):
+# Collects all the data into a single result dict
+def _make_result(result_type, do_query=True, get_cn=True, host=None, port=None, file=None):
     result = dict()
     error = list()
     result['port'] = port
@@ -195,6 +205,7 @@ def _make_result(result_type, do_query=True, host=None, port=None, file=None):
     return result
 
 
+# creates records to add to a zonefile
 def _make_tlsa_records(cert, port):
     hosts = [x for x in cert['an']]
     cn = cert['cn']
