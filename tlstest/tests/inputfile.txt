@@ -1,7 +1,0 @@
-smtp pinus.dafcorp.net
-smtp datawebb.dafcorp.net
-https pinus.dafcorp.net
-https www.dafcorp.net
-https www.dafnet.se
-https vvv.datainternet.it
-https www.feces.se
