@@ -275,6 +275,7 @@ def _get_ssh_key(host, port=22):
     rsa_types = [x for x in so1.key_types if 'rsa' in x]
     dsa_types = [x for x in so1.key_types if 'dss' in x]
     ecdsa_types = [x for x in so1.key_types if 'ecdsa' in x]
+    ed25519_types = [x for x in so1.key_types if 'ed25519' in x]
 
     t1.close()
     s1.close()
@@ -300,6 +301,8 @@ def _get_ssh_key(host, port=22):
                     key_type = 2
                 elif type(key) is pm.ecdsakey.ECDSAKey:
                     key_type = 3
+                elif type(key) is pm.ed25519key.Ed25519Key:
+                    key_type = 4
                 else:
                     continue
 
@@ -324,6 +327,9 @@ def _get_ssh_key(host, port=22):
     k = get_keys(ecdsa_types)
     if k:
         keys['ecdsa'] = k
+    k = get_keys(ed25519_types)
+    if k:
+        keys['ed25519'] = k
     key_d['keys'] = keys
     if error:
         key_d['error'] = error
