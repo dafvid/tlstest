@@ -3,7 +3,7 @@ from setuptools import setup
 setup(name='tlstest',
       version='200606.1',
       url='http://www.dafnet.se',
-      author='David Wahlund',
+      author='David Stenwall',
       author_email='david@dafnet.se',
       packages=['tlstest', 'tlstest.cli', 'tlstest.webapp'],
       include_package_data=True,
