@@ -20,40 +20,6 @@ def main():
     return render_template('base.html')
 
 
-@app.route('/overview')
-def overview():
-    data = dict()
-
-    tlsa = list()
-    tlsa.append(make_https_result('www.dafnet.se'))
-    tlsa.append(make_https_result('mail.dafnet.se'))
-    tlsa.append(make_https_result('priv.dafnet.se'))
-    tlsa.append(make_https_result('observ.dafnet.se'))
-
-    tlsa.append(make_https_result('www.feces.se'))
-    tlsa.append(make_https_result('chat.feces.se'))
-    tlsa.append(make_https_result('git.feces.se'))
-
-    tlsa.append(make_https_result('mainframe.dafcorp.net'))
-    tlsa.append(make_https_result('datawebb.dafcorp.net'))
-
-    data['tlsa'] = tlsa
-
-    smtp = list()
-    smtp.append(make_smtp_result('mainframe.dafcorp.net'))
-    smtp.append(make_smtp_result('datawebb.dafcorp.net'))
-
-    data['smtp'] = smtp
-
-    sshfp = list()
-    sshfp.append(make_sshfp_result('mainframe.dafcorp.net'))
-    sshfp.append(make_sshfp_result('datawebb.dafcorp.net'))
-
-    data['sshfp'] = sshfp
-
-    return render_template('overview.html', data=data)
-
-
 @app.route('/api/https/<host>')
 @app.route('/api/https/<host>/<int:port>')
 @as_json
