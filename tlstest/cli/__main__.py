@@ -27,7 +27,7 @@ def _print_result(r, r_type):
         for e in r['error']:
             print(e)
     else:
-        if not flargs['cron']:
+        if not flargs['cron'] and not flargs['tlsa']:
             print()
             print("[ {}: {} ]".format(r['host'], r['port']))
             print()
@@ -38,7 +38,7 @@ def _print_result(r, r_type):
             print("TO: {}".format(r['cert']['to_d']))
             print()
 
-        if 'check' in r:
+        if 'check' in r and not flargs['tlsa']:
             for k, v in r['check'].items():
                 if v == 'no':
                     print('ERROR: {} {} TLSA {}'.format(r['host'],
@@ -80,7 +80,7 @@ def _sshfp(host, port):
     if r['error']:
         for e in r['error']:
             print(e)
-    if not flargs['cron']:
+    if not flargs['cron'] and not flargs['tlsa']:
         print("[ SSH {}: {} ]".format(host, port))
         print()
         print("ISSUER: {}".format(r['cert']['issuer']))
@@ -90,10 +90,11 @@ def _sshfp(host, port):
         print("TO: {}".format(r['cert']['to_d']))
         print()
 
-    for k, v in r['check'].items():
-        if v == 'no':
-            print('ERROR: {} SSHFP {}'.format(r['host'],
-                                              k.upper()))
+    if not flargs['tlsa']:
+        for k, v in r['check'].items():
+            if v == 'no':
+                print('ERROR: {} SSHFP {}'.format(r['host'],
+                                                  k.upper()))
 
     if not flargs['cron']:
         print()
@@ -133,7 +134,7 @@ if args['file']:
                     raise Exception("Unknown function: {}".format(func))
 
 else:
-    if flargs['https'] or flargs['tlsa']:
+    if flargs['https']:
         assert args['host']
         port = int(args['port']) if args['port'] else 443
         _https(args['host'], port)

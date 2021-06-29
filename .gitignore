@@ -4,4 +4,5 @@ build/*
 dist/*
 ssltest.egg-info/*
 tlstest.egg-info/*
+inputfile.txt
 *.pem

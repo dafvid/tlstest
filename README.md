@@ -3,6 +3,8 @@
 ## arguments
 _cron_: cron adjusted outputs
 
+_tlsa_: print TLSA records instead of testing
+
 ### functions
 
 _https_: test https (port 443)
