@@ -9,5 +9,5 @@ setup(name='tlstest',
       include_package_data=True,
       zip_safe=False,
       install_requires=['cryptography', 'flask', 'flask_json', 'flask_wtf',
-                        'paramiko', 'dnspython', 'PyOpenSSL']
+                        'paramiko', 'dnspython', 'PyOpenSSL', 'email_validator']
       )
