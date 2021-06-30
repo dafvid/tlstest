@@ -29,3 +29,4 @@ _file_ filename: file with space separated format _test_ _host_ \[_port_\] \[_ma
 
 # TODO
 - IMAP test 
+- JSON API
