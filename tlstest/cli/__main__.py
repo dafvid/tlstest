@@ -111,7 +111,9 @@ if args['file']:
                     continue
                 l = l.strip()
                 parts = l.split(' ')
-                if len(parts) == 3:
+                if not l:
+                    continue
+                elif len(parts) == 3:
                     func, host, port = parts
                 elif len(parts) == 2:
                     func, host = parts
