@@ -117,7 +117,7 @@ def _get_tlsa(host, port):
     tlsa = dict()
     error = list()
     try:
-        a = _get_resolver().query("_%s._tcp.%s." % (port, host), 'TLSA')
+        a = _get_resolver().resolve("_%s._tcp.%s." % (port, host), 'TLSA')
         tlsa['ad'] = yn('AD' in dns.flags.to_text(a.response.flags))
         for ans in a:
             if ans.usage == 3:
@@ -321,9 +321,9 @@ def _get_ssh_key(host, port=22):
     k = get_keys(rsa_types)
     if k:
         keys['rsa'] = k
-    k = get_keys(dsa_types)
-    if k:
-        keys['dsa'] = k
+    #k = get_keys(dsa_types)
+    #if k:
+    #    keys['dsa'] = k
     k = get_keys(ecdsa_types)
     if k:
         keys['ecdsa'] = k
@@ -331,8 +331,7 @@ def _get_ssh_key(host, port=22):
     if k:
         keys['ed25519'] = k
     key_d['keys'] = keys
-    if error:
-        key_d['error'] = error
+    key_d['error'] = error
 
     return key_d
 
@@ -444,8 +443,7 @@ def make_sshfp_result(host, port=22):
     except (TimeoutError, dns.exception.DNSException) as e:
         error.append(str(e))
 
-    if error:
-        result['error'] = error
+    result['error'] = error
 
     return result
 

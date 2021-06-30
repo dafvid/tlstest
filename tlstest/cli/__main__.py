@@ -92,8 +92,9 @@ def _sshfp(host, port):
 
     if not flargs['cron']:
         print()
-        for rec in r['records']:
-            print(rec)
+        if 'records' in r:
+            for rec in r['records']:
+                print(rec)
 
 
 if flargs['noquery']:
