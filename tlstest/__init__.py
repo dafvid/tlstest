@@ -19,7 +19,7 @@ from cryptography.x509.oid import NameOID, ExtensionOID
 
 from .util import eq_yn, yn
 
-__version__ = '200606.1'
+__version__ = '210722.1'
 
 
 # Returns the DNS resolver

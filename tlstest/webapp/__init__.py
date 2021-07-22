@@ -5,8 +5,6 @@ from .forms import HostForm, SmimeaForm, FetchSmimeaForm
 from .. import make_https_result, make_smimea, make_smtp_result, \
     make_sshfp_result, make_fetch_smimea, util
 
-__version__ = '180221.1'
-
 app = Flask(__name__)
 app.secret_key = "123456789"
 
