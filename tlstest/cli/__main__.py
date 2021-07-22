@@ -85,10 +85,11 @@ def _sshfp(host, port):
         print("[ SSH {}: {} ]".format(host, port))
 
     if not flargs['tlsa']:
-        for k, v in r['check'].items():
-            if v == 'no':
-                print('ERROR: {} SSHFP {}'.format(r['host'],
-                                                  k.upper()))
+        if 'check' in r:
+            for k, v in r['check'].items():
+                if v == 'no':
+                    print('ERROR: {} SSHFP {}'.format(r['host'],
+                                                      k.upper()))
 
     if not flargs['cron']:
         print()
