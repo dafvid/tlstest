@@ -28,5 +28,5 @@ _cert_ path: path to cert file
 _file_ filename: file with space separated format _test_ _host_ \[_port_\] \[_mail_\] \[_cert_\]
 
 # TODO
-- IMAP test 
-- JSON API
+- IMAP test
+- Check DNSSEC dates from records
