@@ -22,15 +22,15 @@ do_query = True
 
 
 def _print_result(r, r_type):
-    if r['error']:
+    if r['error'] and not flargs['tlsa']:
         print()
         for e in r['error']:
             print(e)
     else:
         if not flargs['cron']:
             print()
-            print("[ {}: {} ]".format(r['host'], r['port']))
             if not flargs['tlsa']:
+                print("[ {}: {} ]".format(r['host'], r['port']))
                 print()
                 print("ISSUER: {}".format(r['cert']['issuer']))
                 print("CN: {}".format(r['cert']['cn']))
@@ -77,10 +77,10 @@ def _sshfp(host, port):
         port = 22
     r = make_sshfp_result(host, port)
 
-    if r['error']:
+    if r['error'] and not flargs['tlsa']:
         for e in r['error']:
             print(e)
-    if not flargs['cron']:
+    if not flargs['cron'] and not flargs['tlsa']:
         print()
         print("[ SSH {}: {} ]".format(host, port))
 
@@ -121,15 +121,18 @@ if args['file']:
                     port = None
                 else:
                     raise Exception("Bad line {}".format(l))
-
-                if func == 'https':
-                    _https(host, port)
-                elif func == 'smtp':
-                    _smtp(host, port)
-                elif func == 'sshfp':
-                    _sshfp(host, port)
-                else:
-                    raise Exception("Unknown function: {}".format(func))
+                try:
+                    if func == 'https':
+                        _https(host, port)
+                    elif func == 'smtp':
+                        _smtp(host, port)
+                    elif func == 'sshfp':
+                        _sshfp(host, port)
+                    else:
+                        raise Exception("Unknown function: {}".format(func))
+                except Exception as e:
+                    if not flargs['tlsa']:
+                        raise e
 
 else:
     if flargs['https']:
